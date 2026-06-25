@@ -82,13 +82,13 @@ onMounted(() => {
 @keyframes heroGlow {
   0% {
     filter: drop-shadow(
-      0 0 35px var(--dynamic-bg-dark, rgba(250, 35, 59, 0.4))
+      0 0 60px var(--dynamic-bg-dark, rgba(250, 35, 59, 0.6))
     );
     transform: scale(1) translateY(0);
   }
   100% {
     filter: drop-shadow(
-      0 0 70px var(--dynamic-bg-dark, rgba(250, 35, 59, 0.65))
+      0 0 120px var(--dynamic-bg-dark, rgba(250, 35, 59, 0.95))
     );
     transform: scale(1.03) translateY(-4px);
   }
@@ -104,8 +104,8 @@ onMounted(() => {
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) scale(1.05);
-    opacity: 0.85;
+    transform: translateX(-50%) scale(1.1);
+    opacity: 0.95;
   }
 }
 
@@ -118,8 +118,8 @@ onMounted(() => {
     opacity: 1;
   }
   100% {
-    transform: scale(1.08);
-    opacity: 0.8;
+    transform: scale(1.15);
+    opacity: 0.9;
   }
 }
 </style>
