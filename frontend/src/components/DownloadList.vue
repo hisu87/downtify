@@ -98,9 +98,10 @@
               {{ Math.round(item.progress) }}%
             </span>
           </div>
-          <span
+          <img
             v-else-if="!item.isErrored()"
-            class="loading loading-spinner loading-sm text-primary"
+            src="../assets/14886.gif"
+            class="h-6 w-6 object-contain"
           />
 
           <button

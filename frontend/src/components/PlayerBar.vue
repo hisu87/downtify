@@ -135,6 +135,15 @@
           <Icon icon="clarity:note-line" class="h-5 w-5" />
         </button>
 
+        <button
+          class="icon-btn hidden lg:inline-flex"
+          :class="{ 'icon-btn-active': layout.isRightSidebarOpen.value }"
+          @click="layout.toggleRightSidebar()"
+          title="Now Playing View"
+        >
+          <Icon icon="clarity:play-list-line" class="h-5 w-5" />
+        </button>
+
         <div
           class="flex w-full max-w-[220px] items-center gap-3 pl-1 sm:w-auto"
         >
@@ -167,10 +176,12 @@ import { Icon } from '@iconify/vue'
 
 import router from '../router'
 import { formatTime, usePlayer } from '../model/player'
+import { useLayout } from '../model/layout'
 
 const props = defineProps({ isLyricsOpen: Boolean })
 const emit = defineEmits(['open-lyrics'])
 const player = usePlayer()
+const layout = useLayout()
 const coverFailed = ref(false)
 
 const currentTrack = computed(() => player.currentTrack.value)

@@ -13,11 +13,12 @@
       :disabled="dm.loading.value"
       @click="lookUp(sm.searchTerm.value)"
     >
-      <span
+      <img
         v-if="dm.loading.value"
-        class="loading loading-spinner"
-        :class="compact ? 'loading-xs' : 'loading-sm'"
-      ></span>
+        src="../assets/14886.gif"
+        class="object-contain"
+        :class="compact ? 'h-3 w-3' : 'h-4 w-4'"
+      />
       <Icon
         v-else-if="sm.isValidURL(sm.searchTerm.value)"
         icon="clarity:download-line"

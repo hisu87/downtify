@@ -20,18 +20,19 @@
     </div>
 
     <LyricsView :is-open="isLyricsOpen" @close="isLyricsOpen = false" />
-    <Sidebar />
-    <router-view v-slot="{ Component, route }">
-      <main class="relative min-h-dvh lg:pl-[260px]">
-        <div
-          class="mx-auto flex min-h-dvh w-full max-w-[1600px] flex-col px-4 pb-[104px] pt-4 sm:px-6 lg:px-8 lg:pb-[96px] lg:pt-6"
-        >
-          <transition name="page" mode="out-in">
-            <component :is="Component" :key="route.fullPath" />
-          </transition>
+    <div class="flex min-h-dvh w-full overflow-hidden pb-[88px] lg:pb-[96px]">
+      <Sidebar />
+      <main class="relative flex-1 min-w-0 transition-all duration-300">
+        <div class="mx-auto flex w-full max-w-[1600px] flex-col px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+          <router-view v-slot="{ Component, route }">
+            <transition name="page" mode="out-in">
+              <component :is="Component" :key="route.fullPath" />
+            </transition>
+          </router-view>
         </div>
       </main>
-    </router-view>
+      <NowPlayingSidebar />
+    </div>
     <PlayerBar
       :is-lyrics-open="isLyricsOpen"
       @open-lyrics="isLyricsOpen = !isLyricsOpen"
@@ -44,15 +45,18 @@
 import { onBeforeMount, ref } from 'vue'
 import PlayerBar from './components/PlayerBar.vue'
 import Sidebar from './components/Sidebar.vue'
+import NowPlayingSidebar from './components/NowPlayingSidebar.vue'
 import Settings from './components/Settings.vue'
 import LyricsView from './components/LyricsView.vue'
 import { useBinaryThemeManager } from './model/theme'
 import { useDynamicTheme } from './model/dynamicTheme'
 import { usePlayer } from './model/player'
+import { useLayout } from './model/layout'
 
 const isLyricsOpen = ref(false)
 const themeMgr = useBinaryThemeManager()
 const player = usePlayer()
+const layout = useLayout()
 useDynamicTheme()
 onBeforeMount(() => {
   themeMgr.setLightAlias('downtify-light')

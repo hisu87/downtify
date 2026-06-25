@@ -26,10 +26,7 @@
             @click="refresh"
             :disabled="loading"
           >
-            <span
-              v-if="loading"
-              class="loading loading-spinner loading-xs mr-2"
-            />
+            <img v-if="loading" src="../assets/14886.gif" class="h-4 w-4 object-contain mr-2" />
             <Icon v-else icon="clarity:refresh-line" class="h-4 w-4 mr-2" />
             {{ t('common.refresh') }}
           </button>
@@ -126,9 +123,10 @@
               @click="onDelete(file)"
               :title="t('library.deleteFile')"
             >
-              <span
+              <img
                 v-if="deleting[file] === true"
-                class="loading loading-spinner loading-xs"
+                src="../assets/14886.gif"
+                class="h-4 w-4 object-contain"
               />
               <Icon v-else icon="clarity:trash-line" class="h-4 w-4" />
             </button>

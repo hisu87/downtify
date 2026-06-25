@@ -48,7 +48,7 @@
               class="btn btn-primary btn-sm h-11 px-5 rounded-full"
               :disabled="adding || !newUrl.trim()"
             >
-              <span v-if="adding" class="loading loading-spinner loading-xs" />
+              <img v-if="adding" src="../assets/14886.gif" class="h-4 w-4 object-contain" />
               <span v-else>{{ t('monitor.watch') }}</span>
             </button>
           </div>
@@ -168,9 +168,10 @@
               :disabled="checking[pl.id]"
               @click="onCheck(pl)"
             >
-              <span
+              <img
                 v-if="checking[pl.id]"
-                class="loading loading-spinner loading-xs"
+                src="../assets/14886.gif"
+                class="h-4 w-4 object-contain"
               />
               <Icon v-else icon="clarity:refresh-line" class="h-4 w-4" />
             </button>

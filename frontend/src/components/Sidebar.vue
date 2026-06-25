@@ -1,18 +1,24 @@
 <template>
   <aside
-    class="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col px-4 py-5 glass-sidebar lg:flex"
+    class="sticky top-0 z-40 hidden h-dvh flex-col py-5 glass-sidebar lg:flex transition-[width] duration-300"
+    :class="layout.isLeftSidebarCollapsed.value ? 'w-[80px] px-2' : 'w-[260px] px-4'"
   >
-    <div class="flex items-center gap-3 px-3 pb-6 pt-2">
-      <div
-        class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FA233B] text-white shadow-[0_4px_12px_rgba(250,35,59,0.25)]"
-      >
+    <div class="flex items-center px-3 pb-6 pt-2" :class="layout.isLeftSidebarCollapsed.value ? 'justify-center' : 'gap-3'">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center">
         <img
-          src="../assets/downtify.svg"
-          class="h-5 w-5 invert brightness-0"
+          v-if="!layout.isLeftSidebarCollapsed.value"
+          src="../assets/14884.png"
+          class="h-9 w-9 object-contain"
+          alt="Downtify"
+        />
+        <img
+          v-else
+          src="../assets/14882.png"
+          class="h-9 w-9 object-contain"
           alt="Downtify"
         />
       </div>
-      <div class="min-w-0">
+      <div class="min-w-0" v-show="!layout.isLeftSidebarCollapsed.value">
         <h1
           class="text-lg font-bold tracking-tight text-base-content flex items-center gap-1"
         >
@@ -22,12 +28,15 @@
       </div>
     </div>
 
-    <nav class="space-y-1 px-1">
+    <nav class="space-y-1" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
       <button
         v-for="item in primaryItems"
         :key="item.name"
         class="apple-nav-item w-full"
-        :class="isActive(item.name) ? 'apple-nav-item-active' : ''"
+        :class="[
+          isActive(item.name) ? 'apple-nav-item-active' : '',
+          layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+        ]"
         @click="navigate(item)"
         :title="item.label"
       >
@@ -35,24 +44,29 @@
           :icon="isActive(item.name) ? item.activeIcon : item.icon"
           class="h-5 w-5 shrink-0"
         />
-        <span>{{ item.label }}</span>
+        <span v-show="!layout.isLeftSidebarCollapsed.value">{{ item.label }}</span>
         <span
-          v-if="item.badge === 'queue' && queueCount > 0"
+          v-if="item.badge === 'queue' && queueCount > 0 && !layout.isLeftSidebarCollapsed.value"
           class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FA233B] px-1.5 text-[10px] font-bold text-white"
         >
           {{ queueCount }}
         </span>
+        <div v-else-if="item.badge === 'queue' && queueCount > 0 && layout.isLeftSidebarCollapsed.value" class="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#FA233B]"></div>
       </button>
     </nav>
 
-    <div class="mt-8 px-1">
-      <p class="apple-pill mb-3 text-base-content/45 text-[10px]">Library</p>
+    <div class="mt-8" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
+      <p class="apple-pill mb-3 text-base-content/45 text-[10px]" v-show="!layout.isLeftSidebarCollapsed.value">Library</p>
+      <div v-show="layout.isLeftSidebarCollapsed.value" class="h-[1px] w-8 bg-base-content/10 mx-auto mb-3"></div>
       <nav class="space-y-1">
         <button
           v-for="item in secondaryItems"
           :key="item.name"
           class="apple-nav-item w-full"
-          :class="isActive(item.name) ? 'apple-nav-item-active' : ''"
+          :class="[
+            isActive(item.name) ? 'apple-nav-item-active' : '',
+            layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+          ]"
           @click="navigate(item)"
           :title="item.label"
         >
@@ -60,13 +74,14 @@
             :icon="isActive(item.name) ? item.activeIcon : item.icon"
             class="h-5 w-5 shrink-0"
           />
-          <span>{{ item.label }}</span>
+          <span v-show="!layout.isLeftSidebarCollapsed.value">{{ item.label }}</span>
         </button>
       </nav>
     </div>
 
-    <div class="mt-auto space-y-3 px-1 pb-1 pt-6">
+    <div class="mt-auto space-y-3 pb-1 pt-6" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
       <div
+        v-if="!layout.isLeftSidebarCollapsed.value"
         class="rounded-xl border border-black/5 bg-black/5 dark:border-white/8 dark:bg-white/5 p-4 backdrop-blur-md"
       >
         <p
@@ -95,15 +110,40 @@
           </button>
         </div>
       </div>
+      <button
+        v-else
+        class="apple-nav-item w-full justify-center px-0"
+        @click="toggleTheme"
+        :title="themeActionLabel"
+      >
+        <Icon
+          :icon="isDark ? 'clarity:sun-line' : 'clarity:moon-line'"
+          class="h-5 w-5 shrink-0"
+        />
+      </button>
 
       <label
         for="settings-modal"
         class="apple-nav-item cursor-pointer"
+        :class="layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''"
         title="Settings"
       >
         <Icon icon="clarity:cog-line" class="h-5 w-5 shrink-0" />
-        <span>Settings</span>
+        <span v-show="!layout.isLeftSidebarCollapsed.value">Settings</span>
       </label>
+
+      <button
+        class="apple-nav-item w-full"
+        :class="layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''"
+        @click="layout.toggleLeftSidebar()"
+        title="Toggle Sidebar"
+      >
+        <Icon
+          :icon="layout.isLeftSidebarCollapsed.value ? 'clarity:step-forward-line' : 'clarity:step-backward-line'"
+          class="h-5 w-5 shrink-0"
+        />
+        <span v-show="!layout.isLeftSidebarCollapsed.value">Collapse</span>
+      </button>
     </div>
   </aside>
 </template>
@@ -116,6 +156,7 @@ import { useRoute } from 'vue-router'
 import router from '../router'
 import { useBinaryThemeManager } from '../model/theme'
 import { useProgressTracker } from '../model/download'
+import { useLayout } from '../model/layout'
 
 const route = useRoute()
 const themeMgr = useBinaryThemeManager({
@@ -123,6 +164,7 @@ const themeMgr = useBinaryThemeManager({
   newDarkAlias: 'downtify-dark',
 })
 const pt = useProgressTracker()
+const layout = useLayout()
 
 const primaryItems = [
   {

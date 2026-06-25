@@ -16,7 +16,7 @@
         <div
           class="relative inline-flex h-24 w-24 items-center justify-center rounded-3xl surface-strong shadow-glow"
         >
-          <img src="../assets/downtify.svg" class="h-14 w-14" />
+          <img src="../assets/14886.gif" class="h-14 w-14" />
         </div>
       </div>
 
