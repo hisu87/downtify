@@ -48,7 +48,11 @@
               class="btn btn-primary btn-sm h-11 px-5 rounded-full"
               :disabled="adding || !newUrl.trim()"
             >
-              <img v-if="adding" src="../assets/14886.gif" class="h-4 w-4 object-contain" />
+              <img
+                v-if="adding"
+                src="../assets/14886.gif"
+                class="h-4 w-4 object-contain"
+              />
               <span v-else>{{ t('monitor.watch') }}</span>
             </button>
           </div>

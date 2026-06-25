@@ -23,7 +23,9 @@
     <div class="flex min-h-dvh w-full overflow-hidden pb-[88px] lg:pb-[96px]">
       <Sidebar />
       <main class="relative flex-1 min-w-0 transition-all duration-300">
-        <div class="mx-auto flex w-full max-w-[1600px] flex-col px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6">
+        <div
+          class="mx-auto flex w-full max-w-[1600px] flex-col px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6"
+        >
           <router-view v-slot="{ Component, route }">
             <transition name="page" mode="out-in">
               <component :is="Component" :key="route.fullPath" />

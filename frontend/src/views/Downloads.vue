@@ -26,7 +26,11 @@
             @click="refresh"
             :disabled="loading"
           >
-            <img v-if="loading" src="../assets/14886.gif" class="h-4 w-4 object-contain mr-2" />
+            <img
+              v-if="loading"
+              src="../assets/14886.gif"
+              class="h-4 w-4 object-contain mr-2"
+            />
             <Icon v-else icon="clarity:refresh-line" class="h-4 w-4 mr-2" />
             {{ t('common.refresh') }}
           </button>

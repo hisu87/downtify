@@ -1,9 +1,14 @@
 <template>
   <aside
     class="sticky top-0 z-40 hidden h-dvh flex-col py-5 glass-sidebar lg:flex transition-[width] duration-300"
-    :class="layout.isLeftSidebarCollapsed.value ? 'w-[80px] px-2' : 'w-[260px] px-4'"
+    :class="
+      layout.isLeftSidebarCollapsed.value ? 'w-[80px] px-2' : 'w-[260px] px-4'
+    "
   >
-    <div class="flex items-center px-3 pb-6 pt-2" :class="layout.isLeftSidebarCollapsed.value ? 'justify-center' : 'gap-3'">
+    <div
+      class="flex items-center px-3 pb-6 pt-2"
+      :class="layout.isLeftSidebarCollapsed.value ? 'justify-center' : 'gap-3'"
+    >
       <div class="flex h-9 w-9 shrink-0 items-center justify-center">
         <img
           v-if="!layout.isLeftSidebarCollapsed.value"
@@ -28,14 +33,17 @@
       </div>
     </div>
 
-    <nav class="space-y-1" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
+    <nav
+      class="space-y-1"
+      :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'"
+    >
       <button
         v-for="item in primaryItems"
         :key="item.name"
         class="apple-nav-item w-full"
         :class="[
           isActive(item.name) ? 'apple-nav-item-active' : '',
-          layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+          layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : '',
         ]"
         @click="navigate(item)"
         :title="item.label"
@@ -44,20 +52,44 @@
           :icon="isActive(item.name) ? item.activeIcon : item.icon"
           class="h-5 w-5 shrink-0"
         />
-        <span v-show="!layout.isLeftSidebarCollapsed.value">{{ item.label }}</span>
+        <span v-show="!layout.isLeftSidebarCollapsed.value">{{
+          item.label
+        }}</span>
         <span
-          v-if="item.badge === 'queue' && queueCount > 0 && !layout.isLeftSidebarCollapsed.value"
+          v-if="
+            item.badge === 'queue' &&
+            queueCount > 0 &&
+            !layout.isLeftSidebarCollapsed.value
+          "
           class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FA233B] px-1.5 text-[10px] font-bold text-white"
         >
           {{ queueCount }}
         </span>
-        <div v-else-if="item.badge === 'queue' && queueCount > 0 && layout.isLeftSidebarCollapsed.value" class="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#FA233B]"></div>
+        <div
+          v-else-if="
+            item.badge === 'queue' &&
+            queueCount > 0 &&
+            layout.isLeftSidebarCollapsed.value
+          "
+          class="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#FA233B]"
+        ></div>
       </button>
     </nav>
 
-    <div class="mt-8" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
-      <p class="apple-pill mb-3 text-base-content/45 text-[10px]" v-show="!layout.isLeftSidebarCollapsed.value">Library</p>
-      <div v-show="layout.isLeftSidebarCollapsed.value" class="h-[1px] w-8 bg-base-content/10 mx-auto mb-3"></div>
+    <div
+      class="mt-8"
+      :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'"
+    >
+      <p
+        class="apple-pill mb-3 text-base-content/45 text-[10px]"
+        v-show="!layout.isLeftSidebarCollapsed.value"
+      >
+        Library
+      </p>
+      <div
+        v-show="layout.isLeftSidebarCollapsed.value"
+        class="h-[1px] w-8 bg-base-content/10 mx-auto mb-3"
+      ></div>
       <nav class="space-y-1">
         <button
           v-for="item in secondaryItems"
@@ -65,7 +97,7 @@
           class="apple-nav-item w-full"
           :class="[
             isActive(item.name) ? 'apple-nav-item-active' : '',
-            layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+            layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : '',
           ]"
           @click="navigate(item)"
           :title="item.label"
@@ -74,12 +106,17 @@
             :icon="isActive(item.name) ? item.activeIcon : item.icon"
             class="h-5 w-5 shrink-0"
           />
-          <span v-show="!layout.isLeftSidebarCollapsed.value">{{ item.label }}</span>
+          <span v-show="!layout.isLeftSidebarCollapsed.value">{{
+            item.label
+          }}</span>
         </button>
       </nav>
     </div>
 
-    <div class="mt-auto space-y-3 pb-1 pt-6" :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'">
+    <div
+      class="mt-auto space-y-3 pb-1 pt-6"
+      :class="layout.isLeftSidebarCollapsed.value ? '' : 'px-1'"
+    >
       <div
         v-if="!layout.isLeftSidebarCollapsed.value"
         class="rounded-xl border border-black/5 bg-black/5 dark:border-white/8 dark:bg-white/5 p-4 backdrop-blur-md"
@@ -125,7 +162,9 @@
       <label
         for="settings-modal"
         class="apple-nav-item cursor-pointer"
-        :class="layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''"
+        :class="
+          layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+        "
         title="Settings"
       >
         <Icon icon="clarity:cog-line" class="h-5 w-5 shrink-0" />
@@ -134,12 +173,18 @@
 
       <button
         class="apple-nav-item w-full"
-        :class="layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''"
+        :class="
+          layout.isLeftSidebarCollapsed.value ? 'justify-center px-0' : ''
+        "
         @click="layout.toggleLeftSidebar()"
         title="Toggle Sidebar"
       >
         <Icon
-          :icon="layout.isLeftSidebarCollapsed.value ? 'clarity:step-forward-line' : 'clarity:step-backward-line'"
+          :icon="
+            layout.isLeftSidebarCollapsed.value
+              ? 'clarity:step-forward-line'
+              : 'clarity:step-backward-line'
+          "
           class="h-5 w-5 shrink-0"
         />
         <span v-show="!layout.isLeftSidebarCollapsed.value">Collapse</span>
