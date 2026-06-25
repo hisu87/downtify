@@ -5,9 +5,7 @@
       layout.isLeftSidebarCollapsed.value ? 'w-[80px] px-2' : 'w-[260px] px-4'
     "
   >
-    <div
-      class="flex items-center px-3 pb-6 pt-2 justify-center"
-    >
+    <div class="flex items-center px-3 pb-6 pt-2 justify-center">
       <div class="flex items-center justify-center">
         <img
           v-if="!layout.isLeftSidebarCollapsed.value"
