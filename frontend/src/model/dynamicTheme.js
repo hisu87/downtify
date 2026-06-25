@@ -28,11 +28,9 @@ export function useDynamicTheme() {
           // color.hex, color.isDark, color.isLight
           dominantColor.value = color.hex
 
-          // Set opacity variations for backgrounds
-          const rgba = color.rgba.replace(')', ', 0.15)').replace('rgb', 'rgba')
-          const rgbaDark = color.rgba
-            .replace(')', ', 0.4)')
-            .replace('rgb', 'rgba')
+          const [r, g, b] = color.value
+          const rgba = `rgba(${r}, ${g}, ${b}, 0.15)`
+          const rgbaDark = `rgba(${r}, ${g}, ${b}, 0.4)`
 
           dominantColorLight.value = rgba
           dominantColorDark.value = rgbaDark
