@@ -13,10 +13,13 @@ The `Dockerfile` requires both the frontend compiled assets (`frontend/dist`) an
 Two scripts are provided in the root directory to automate the entire process (building the frontend, exporting requirements, stopping/removing any existing container, building the docker image, and starting a new container):
 
 - **Windows (PowerShell):**
+
   ```powershell
   ./build-and-run.ps1
   ```
+
 - **Linux/macOS/Git Bash:**
+
   ```bash
   chmod +x build-and-run.sh
   ./build-and-run.sh
