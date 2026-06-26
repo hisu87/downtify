@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const VOLUME_KEY = 'downtify-player-volume'
 
@@ -54,6 +54,7 @@ function ensureAudio() {
     // Final sync
     if (audio) currentTime.value = audio.currentTime
   })
+  setupMediaSession()
   return audio
 }
 
@@ -265,6 +266,39 @@ const currentTrack = computed(() =>
 const progressPct = computed(() =>
   duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
 )
+
+watch(currentTrack, () => {
+  updateMediaSession()
+})
+
+function updateMediaSession() {
+  if ('mediaSession' in navigator && currentTrack.value) {
+    const track = currentTrack.value
+    // Use full URL for cover so MediaSession correctly resolves it
+    const coverFullUrl = new URL(track.cover, window.location.origin).href
+    
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist,
+      album: 'Downtify',
+      artwork: [
+        { src: coverFullUrl, sizes: '512x512', type: 'image/jpeg' }
+      ]
+    })
+  }
+}
+
+function setupMediaSession() {
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('play', play)
+    navigator.mediaSession.setActionHandler('pause', pause)
+    navigator.mediaSession.setActionHandler('previoustrack', prev)
+    navigator.mediaSession.setActionHandler('nexttrack', next)
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      seek(details.seekTime)
+    })
+  }
+}
 
 export function formatTime(seconds) {
   if (!isFinite(seconds) || seconds < 0) return '0:00'

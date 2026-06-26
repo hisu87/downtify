@@ -3,12 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/assets/14882-B6v-k2zP.png" type="image/png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
     <title>Downtify</title>
-    <script type="module" crossorigin src="/assets/index-Cf36oTvA.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-VrbdUlRV.css">
+    <script type="module" crossorigin src="/assets/index-BVZfXs1t.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DKW7iKs5.css">
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.error('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

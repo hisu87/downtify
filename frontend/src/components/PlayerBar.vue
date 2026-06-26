@@ -1,11 +1,16 @@
 <template>
   <footer class="glass-player-bar fixed inset-x-0 bottom-0 z-[110]">
+    <!-- Thin progress bar for mobile -->
+    <div class="absolute top-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 lg:hidden" @click="onSeekClick" @pointerdown="onSeekStart">
+      <div class="player-progress-fill h-full transition-[width] duration-150" :style="`width: ${player.progressPct.value}%`" />
+    </div>
+
     <div
-      class="mx-auto grid h-[88px] w-full max-w-[1600px] grid-cols-1 gap-4 px-4 py-2.5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] lg:px-8"
+      class="mx-auto flex h-[72px] lg:h-[88px] w-full max-w-[1600px] items-center justify-between px-3 sm:px-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-4 lg:px-8 lg:py-2.5"
     >
-      <div class="flex min-w-0 items-center gap-3">
+      <div class="flex min-w-0 flex-1 lg:flex-none items-center gap-3">
         <div
-          class="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-base-200 shadow-sm border border-black/5 dark:border-white/10"
+          class="relative h-12 w-12 lg:h-14 lg:w-14 shrink-0 overflow-hidden rounded-lg bg-base-200 shadow-sm border border-black/5 dark:border-white/10"
         >
           <img
             v-if="currentTrack && !coverFailed"
@@ -37,7 +42,29 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-col items-center justify-center gap-1.5">
+      <!-- Mobile controls -->
+      <div class="flex items-center gap-2 lg:hidden">
+        <button
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#FA233B] text-white shadow-[0_0_16px_rgba(250,35,59,0.25)] transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:scale-105 active:scale-95 disabled:opacity-50"
+          @click="player.toggle()"
+          :disabled="!hasTracks"
+        >
+          <Icon
+            :icon="player.isPlaying.value ? 'clarity:pause-solid' : 'clarity:play-solid'"
+            class="h-5 w-5"
+          />
+        </button>
+        <button
+          class="icon-btn h-10 w-10"
+          @click="player.next()"
+          :disabled="!hasTracks"
+        >
+          <Icon icon="clarity:step-forward-2-line" class="h-6 w-6" />
+        </button>
+      </div>
+
+      <!-- Desktop controls -->
+      <div class="hidden min-w-0 lg:flex flex-col items-center justify-center gap-1.5">
         <div class="flex items-center gap-2 sm:gap-3">
           <button
             class="icon-btn"
@@ -110,7 +137,8 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-2 lg:gap-3">
+      <!-- Actions -->
+      <div class="hidden lg:flex items-center justify-end gap-2 lg:gap-3">
         <button
           class="icon-btn"
           :class="{ 'icon-btn-active': player.shuffle.value }"
