@@ -14,13 +14,20 @@ def test_script_exists():
     assert SCRIPT.exists(), 'version.sh is missing from repo root'
 
 
+import sys
+
+import pytest
+
+
 def test_script_is_executable():
+    if sys.platform == 'win32':
+        pytest.skip("Executable bit check not applicable on Windows")
     assert SCRIPT.stat().st_mode & 0o111, 'version.sh is not executable'
 
 
 def test_current_flag_returns_valid_semver():
     result = subprocess.run(
-        [str(SCRIPT), '--current'],
+        ['bash', str(SCRIPT), '--current'],
         capture_output=True,
         text=True,
         check=False,
@@ -34,7 +41,7 @@ def test_current_flag_returns_valid_semver():
 
 def test_invalid_semver_rejected():
     result = subprocess.run(
-        [str(SCRIPT), 'not-semver'],
+        ['bash', str(SCRIPT), 'not-semver'],
         capture_output=True,
         text=True,
         check=False,
@@ -44,7 +51,7 @@ def test_invalid_semver_rejected():
 
 def test_missing_argument_shows_usage():
     result = subprocess.run(
-        [str(SCRIPT)],
+        ['bash', str(SCRIPT)],
         capture_output=True,
         text=True,
         check=False,

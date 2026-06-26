@@ -1,13 +1,17 @@
-import pytest
-import sqlite3
 import time
 from pathlib import Path
+
+import pytest
+
 from downtify.monitor import PlaylistMonitorDB
+
 
 @pytest.fixture
 def monitor_db(tmp_path: Path):
     db_path = tmp_path / "test_monitor.db"
     return PlaylistMonitorDB(db_path)
+
+
 def test_mark_tracks_downloaded_batch_correctness(monitor_db):
     pl = monitor_db.add_playlist('spot_batch', 'Batch PL', 'https://open.spotify.com/playlist/…0')
     batch_data = [

@@ -8,8 +8,8 @@ authentication and no premium account are required.
 from __future__ import annotations
 
 import concurrent.futures
-import functools
 import copy
+import functools
 import json
 import re
 from typing import Any, Optional
@@ -449,8 +449,6 @@ def _cached_track_from_id(track_id: str) -> dict[str, Any]:
     payload = _fetch_embed_json('track', track_id)
     entity = _entity_from(payload)
     return _track_dict(entity, track_id=track_id)
-
-
 
 
 def track_from_id(track_id: str) -> dict[str, Any]:
