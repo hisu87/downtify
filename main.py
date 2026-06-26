@@ -179,6 +179,18 @@ def _extract_cover(path: Path) -> tuple[bytes | None, str | None]:
     return None, None
 
 
+def _is_safe_path(path_str: str) -> bool:
+    """Ensure path is relative, free of null bytes, and contains no traversal segments."""
+    if "\x00" in path_str:
+        return False
+
+    # Convert Windows style slashes to forward slashes to ensure consistent checking on non-Windows systems
+    path_str = path_str.replace('\\', '/')
+
+    p = Path(path_str)
+    return not p.is_absolute() and ".." not in p.parts and not path_str.startswith("/") and not path_str[1:3] == ":/"
+
+
 def build_app() -> FastAPI:
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     DATABASE_DIR.mkdir(parents=True, exist_ok=True)
@@ -257,6 +269,9 @@ def build_app() -> FastAPI:
 
     @app.delete('/delete')
     def delete_download(file: str) -> dict:
+        if not _is_safe_path(file):
+            return {'deleted': False, 'error': 'Invalid path: traversal components not allowed'}
+
         # Resolve and confine to DOWNLOAD_DIR to prevent path traversal.
         base = DOWNLOAD_DIR.resolve()
         try:
@@ -274,6 +289,9 @@ def build_app() -> FastAPI:
 
     @app.get('/cover')
     def get_cover(file: str):
+        if not _is_safe_path(file):
+            raise HTTPException(status_code=400, detail='Invalid path: traversal components not allowed')
+
         # Resolve and confine to DOWNLOAD_DIR to prevent path traversal.
         base = DOWNLOAD_DIR.resolve()
         try:
