@@ -13,7 +13,11 @@ def clean_title_for_matching(title: str) -> str:
 
 
 def is_metadata_match(track: dict, cand: dict) -> bool:
-    track_title = clean_title_for_matching(track.get('title', ''))
+    # Spotify-sourced track dicts use 'name' for the song title; the lyrics
+    # search endpoint passes 'title'. Accept either key to match both pipelines.
+    track_title = clean_title_for_matching(
+        track.get('title') or track.get('name', '')
+    )
     cand_title = clean_title_for_matching(cand.get('title', ''))
 
     # Spotify embeds use 'subtitle' for artists string, cand might use 'artist' or 'subtitle'

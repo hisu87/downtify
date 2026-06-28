@@ -407,7 +407,7 @@ class LyricsResolver:
             if cand_meta.get('title') or cand_meta.get('artist'):
                 if not is_metadata_match(track, cand_meta):
                     logger.debug(
-                        f'{provider.name} rejected by Smart Matching: Track({track.get("title")}) vs Cand({cand_meta.get("title")})'
+                        f'{provider.name} rejected by Smart Matching: Track({track.get("title") or track.get("name")}) vs Cand({cand_meta.get("title")})'
                     )
                     return None
 
@@ -538,7 +538,10 @@ class NetEaseYrcProvider(LyricsProvider):
     name = 'netease'
 
     async def fetch(self, track: dict[str, Any]) -> Optional[dict[str, Any]]:  # noqa: PLR6301
-        title = track.get('title', '')
+        # 'title' is used by the lyrics search endpoint; Spotify-sourced
+        # track dicts from spotify._track_dict() use 'name' instead.
+        # Fall back to 'name' so both pipelines work correctly.
+        title = track.get('title') or track.get('name', '')
         artist = track.get('subtitle', track.get('artist', ''))
         term = f'{title} {artist}'.strip()
         if not term:
@@ -579,7 +582,8 @@ class MusixmatchTokenProvider(LyricsProvider):
     name = 'musixmatch'
 
     async def fetch(self, track: dict[str, Any]) -> Optional[dict[str, Any]]:  # noqa: PLR6301
-        title = track.get('title', '')
+        # Same 'title' vs 'name' key-mismatch fix as NetEaseYrcProvider.
+        title = track.get('title') or track.get('name', '')
         artist = track.get('subtitle', track.get('artist', ''))
         term = f'{title} {artist}'.strip()
         if not term:
@@ -619,7 +623,9 @@ class LrcLibProvider(LyricsProvider):
     name = 'lrclib'
 
     async def fetch(self, track: dict[str, Any]) -> Optional[dict[str, Any]]:  # noqa: PLR6301
-        title = track.get('title', '')
+        # Same 'title' vs 'name' key-mismatch fix; lrclib returns 400
+        # Bad Request when track_name is empty.
+        title = track.get('title') or track.get('name', '')
         artist = track.get('subtitle', track.get('artist', ''))
         album = track.get('album', '')
         duration = track.get('duration_ms', 0) / 1000.0
