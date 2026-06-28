@@ -1,6 +1,7 @@
 services:
   downtify-hisu:
     container_name: downtify-hisu
+    build: .
     image: ghcr.io/hisu87/downtify:latest
     restart: unless-stopped
     ports:
