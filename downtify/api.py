@@ -42,7 +42,7 @@ from .monitor import PlaylistMonitorDB, check_playlist
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     'audio_providers': ['youtube-music'],
-    'lyrics_providers': ['lrclib'],
+    'lyrics_providers': ['auto'],
     'download_lyrics': True,
     'format': 'mp3',
     'bitrate': '320',
@@ -56,11 +56,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
 def _effective_lyrics_providers(settings: dict[str, Any]) -> list[str]:
     if not settings.get('download_lyrics', True):
         return []
-    return [
-        p
-        for p in (settings.get('lyrics_providers') or [])
-        if isinstance(p, str) and p
-    ]
+
+    selected = settings.get('lyrics_providers') or []
+    if not selected or selected[0] == 'auto':
+        return ['lrclib', 'netease', 'amll', 'musixmatch']
+
+    return [p for p in selected if isinstance(p, str) and p]
 
 
 class ConnectionManager:

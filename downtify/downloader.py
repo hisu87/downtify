@@ -412,6 +412,11 @@ class Downloader:
             if fetched is not None:
                 try:
                     embed_lyrics(final_path, fetched)
+                    logger.info(
+                        "Lyrics fetched and embedded from '{}' for '{}'",
+                        fetched.provider_name,
+                        final_path.name,
+                    )
                 except Exception:
                     logger.exception(
                         'Failed to embed lyrics into {}', final_path
