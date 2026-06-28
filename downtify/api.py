@@ -183,6 +183,54 @@ async def get_lyrics_endpoint(id: str):
         _INFLIGHT_RESOLVES.pop(id, None)
 
 
+@router.get('/api/v1/lyrics/search')
+async def search_lyrics_endpoint(
+    title: str, artist: str = '', album: str = '', duration_ms: int = 0
+):
+    key = f'search:{title}:{artist}:{album}:{duration_ms}'
+    if key in _INFLIGHT_RESOLVES:
+        logger.debug(f'Coalescing stampede request for search {key}...')
+        return await _INFLIGHT_RESOLVES[key]
+
+    loop = asyncio.get_running_loop()
+    fut = loop.create_future()
+    _INFLIGHT_RESOLVES[key] = fut
+
+    try:
+        track_dict = {
+            'id': '',
+            'title': title,
+            'artist': artist,
+            'subtitle': artist,
+            'album': album,
+            'duration_ms': duration_ms,
+        }
+
+        effective_providers = _effective_lyrics_providers(state.settings)
+        provider_instances = []
+        for p in effective_providers:
+            if p == 'amll':
+                provider_instances.append(lyrics.AmllTtmlProvider())
+            elif p == 'netease':
+                provider_instances.append(lyrics.NetEaseYrcProvider())
+            elif p == 'lrclib':
+                provider_instances.append(lyrics.LrcLibProvider())
+            elif p == 'musixmatch':
+                provider_instances.append(lyrics.MusixmatchTokenProvider())
+
+        resolver = lyrics.LyricsResolver(providers=provider_instances)
+        lyrics_ast = await resolver.resolve(track_dict)
+
+        fut.set_result(lyrics_ast)
+        return lyrics_ast
+    except BaseException:
+        if not fut.done():
+            fut.cancel()
+        raise
+    finally:
+        _INFLIGHT_RESOLVES.pop(key, None)
+
+
 @router.get('/api/check_update')
 def check_update() -> Optional[dict[str, Any]]:
     return None

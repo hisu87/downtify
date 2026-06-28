@@ -386,7 +386,7 @@ async function fetchLyrics() {
   _lastFetchId = reqId
 
   if (lyricsCache.has(key)) {
-    applyLyrics(lyricsCache.get(key))
+    applyLyrics(lyricsCache.get(key).lines)
     return
   }
   loading.value = true
@@ -398,7 +398,7 @@ async function fetchLyrics() {
     loading.value = false
   } catch (err) {
     if (_lastFetchId === reqId) {
-      error.value = err.message || 'Error loading lyrics'
+      error.value = err?.message || 'Error loading lyrics'
       loading.value = false
     }
   }
@@ -422,10 +422,21 @@ async function getLyrics(key) {
 
 async function doFetch(key) {
   const t = currentTrack.value
-  if (!t || !t.id) throw new Error('No track selected')
+  if (!t) throw new Error('No track selected')
 
   try {
-    const ast = await api.getTrackLyrics(t.id)
+    let ast
+    if (t.id) {
+      ast = await api.getTrackLyrics(t.id)
+    } else {
+      if (!t.title || !t.artist) throw new Error('No track information')
+      ast = await api.searchTrackLyrics(
+        t.title,
+        t.artist,
+        t.album || '',
+        t.duration_ms || 0
+      )
+    }
     if (!ast || !ast.lines) {
       throw new Error('No lyrics available')
     }
@@ -440,8 +451,12 @@ async function doFetch(key) {
 }
 
 function applyLyrics(lines) {
-  parsedLyrics.value = lines
   loading.value = false
+  if (!Array.isArray(lines)) {
+    error.value = 'Invalid lyrics format'
+    return
+  }
+  parsedLyrics.value = lines
   error.value = ''
   animator.setLines(lines)
 

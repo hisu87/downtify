@@ -47,6 +47,12 @@ function search(query) {
   return API.get('/api/songs/search', { params: { query } })
 }
 
+function searchTrackLyrics(title, artist, album = '', duration_ms = 0) {
+  return API.get('/api/v1/lyrics/search', {
+    params: { title, artist, album, duration_ms },
+  })
+}
+
 function open(songURL) {
   return API.get('/api/song/url', { params: { url: songURL } })
 }
@@ -146,6 +152,7 @@ export default {
   setSettings,
   check_for_update,
   getTrackLyrics,
+  searchTrackLyrics,
   ws_onmessage,
   ws_onerror,
   getVersion,
