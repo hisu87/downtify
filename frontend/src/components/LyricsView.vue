@@ -48,7 +48,7 @@
         <div
           v-else
           class="lyrics-list"
-          :style="{ transform: `translate3d(0, ${scrollY}px, 0)` }"
+          :style="{ transform: `translate3d(0, ${scrollY}px, 0)`, fontFamily: `'${currentFont}', sans-serif` }"
         >
           <!-- Top Spacer -->
           <div :style="{ height: topPad + topSpacerHeight + 'px' }"></div>
@@ -144,6 +144,40 @@ import { LyricsAnimator } from '../utils/lyrics/LyricsAnimator.js'
 // ─── Props / Emits ────────────────────────────────────────────────────────────
 const props = defineProps({ isOpen: Boolean })
 const emit = defineEmits(['close'])
+
+// ─── Fonts ────────────────────────────────────────────────────────────────────
+const LYRIC_FONTS = [
+  'Be Vietnam Pro', 'Inter', 'Plus Jakarta Sans', 'Lexend',
+  'Playfair Display', 'Lora', 'Bodoni Moda', 'Cinzel',
+  'Patrick Hand', 'Dancing Script', 'Pacifico', 'Caveat',
+  'Anton', 'Alfa Slab One', 'Bungee', 'Space Grotesk',
+  'Space Mono', 'Courier Prime', 'Comfortaa', 'Prata'
+]
+
+const currentFont = ref('Inter')
+
+function updateFontForTrack(track) {
+  if (!track) {
+    currentFont.value = 'Inter'
+    return
+  }
+  const genre = (track.genre || '').toLowerCase()
+  let validGroups = []
+  
+  if (/(rap|hip-hop|hip hop|dance)/.test(genre)) {
+    validGroups = [0, 3] // Groups 1 & 4
+  } else if (/(r&b|soul|ballad)/.test(genre)) {
+    validGroups = [1, 2] // Groups 2 & 3
+  } else if (/(pop|indie)/.test(genre)) {
+    validGroups = [0, 1, 2, 3, 4] // All groups
+  } else {
+    validGroups = [0, 1, 2, 3, 4]
+  }
+  
+  const chosenGroup = validGroups[Math.floor(Math.random() * validGroups.length)]
+  const fontInGroup = Math.floor(Math.random() * 4)
+  currentFont.value = LYRIC_FONTS[chosenGroup * 4 + fontInGroup]
+}
 
 // ─── Player ───────────────────────────────────────────────────────────────────
 const player = usePlayer()
@@ -381,6 +415,7 @@ let _lastFetchId = null
 async function fetchLyrics() {
   if (!currentTrack.value) return
   const key = cacheKey()
+  updateFontForTrack(currentTrack.value)
 
   const reqId = Symbol()
   _lastFetchId = reqId
