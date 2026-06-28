@@ -278,21 +278,27 @@ async def check_playlist(  # noqa: PLR0913
 
     pl_subdir = m3u.sanitize_playlist_name(playlist.name)
 
-    new_tracks = []
-    for t in tracks:
-        if not t.get('song_id'):
-            continue
-        tid = t['song_id']
-        if tid not in known_tracks:
-            new_tracks.append(t)
-        else:
-            stored = known_tracks[tid]
-            if (
-                stored is not None
-                and not (downloader.download_dir / stored).exists()
-            ):
-                # File was deleted — re-download
-                new_tracks.append(t)
+    def _find_new_tracks() -> list[dict[str, Any]]:
+        missing = []
+        for t in tracks:
+            if not t.get('song_id'):
+                continue
+            tid = t['song_id']
+            if tid not in known_tracks:
+                missing.append(t)
+            else:
+                stored = known_tracks[tid]
+                if (
+                    stored is not None
+                    and not (downloader.download_dir / stored).exists()
+                ):
+                    # File was deleted — re-download
+                    missing.append(t)
+        return missing
+
+    # ⚡ OPTIMIZATION: Offload O(N) disk I/O operations to a thread to
+    # prevent blocking the asyncio main event loop on large playlists.
+    new_tracks = await asyncio.to_thread(_find_new_tracks)
 
     if new_tracks:
         logger.info(

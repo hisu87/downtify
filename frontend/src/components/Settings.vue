@@ -287,8 +287,14 @@
         </label>
         <button
           class="btn btn-primary btn-sm h-10 px-6 rounded-full"
+          :disabled="sm.isSaving.value"
           @click="sm.saveSettings()"
         >
+          <Icon
+            v-if="sm.isSaving.value"
+            icon="clarity:sync-line"
+            class="animate-spin h-4 w-4 mr-1.5"
+          />
           {{ t('common.save') }}
         </button>
       </div>

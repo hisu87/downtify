@@ -178,9 +178,25 @@ class Downloader:
         primary = target_dir / f'{basename}.{self.audio_format}'
         if primary.exists():
             return f'{prefix}{primary.name}'
-        for candidate in target_dir.glob(f'{basename}.*'):
-            if candidate.is_file():
-                return f'{prefix}{candidate.name}'
+        # ⚡ OPTIMIZATION: Check common audio extensions directly instead of
+        # using glob(). glob() scans the entire directory (O(N)), making
+        # playlist regeneration O(N^2). It also fails on filenames with brackets.
+        for ext in (
+            'opus',
+            'm4a',
+            'flac',
+            'ogg',
+            'oga',
+            'mp3',
+            'aac',
+            'webm',
+            'wav',
+        ):
+            if ext == self.audio_format:
+                continue
+            cand = target_dir / f'{basename}.{ext}'
+            if cand.exists():
+                return f'{prefix}{cand.name}'
         return None
 
     def _resolve_target_dir(self, subdir: Optional[str]) -> tuple[Path, str]:
@@ -354,7 +370,19 @@ class Downloader:
         final_path = target_dir / f'{basename}.{self.audio_format}'
         if not final_path.exists():
             # yt-dlp sometimes uses the upstream extension for opus/m4a
-            for candidate in target_dir.glob(f'{basename}.*'):
+            # ⚡ OPTIMIZATION: Avoid glob() scanning to prevent O(N) directory reads
+            for ext in (
+                'opus',
+                'm4a',
+                'flac',
+                'ogg',
+                'oga',
+                'mp3',
+                'aac',
+                'webm',
+                'wav',
+            ):
+                candidate = target_dir / f'{basename}.{ext}'
                 if candidate.is_file():
                     final_path = candidate
                     break

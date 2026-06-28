@@ -34,23 +34,30 @@ API.getSettings().then((res) => {
 
 export function useSettingsManager() {
   const isSaved = ref()
+  const isSaving = ref(false)
   function saveSettings() {
     console.log('Saving settings:', settings.value)
-    API.setSettings(settings.value).then((res) => {
-      if (res.status === 200) {
-        console.log('Saved!')
-        isSaved.value = true
-        setTimeout(() => {
-          isSaved.value = null
-        }, 2000)
-      } else {
-        console.error('Error saving settings.', res)
-        isSaved.value = false
-        setTimeout(() => {
-          isSaved.value = null
-        }, 2000)
-      }
-    })
+    isSaving.value = true
+    API.setSettings(settings.value)
+      .then((res) => {
+        isSaving.value = false
+        if (res.status === 200) {
+          console.log('Saved!')
+          isSaved.value = true
+          setTimeout(() => {
+            isSaved.value = null
+          }, 2000)
+        } else {
+          console.error('Error saving settings.', res)
+          isSaved.value = false
+          setTimeout(() => {
+            isSaved.value = null
+          }, 2000)
+        }
+      })
+      .catch(() => {
+        isSaving.value = false
+      })
   }
-  return { saveSettings, settings, settingsOptions, isSaved }
+  return { saveSettings, settings, settingsOptions, isSaved, isSaving }
 }

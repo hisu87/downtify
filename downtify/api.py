@@ -263,9 +263,14 @@ def _resolve_url(url: str):
             return spotify.album_tracks_from_id(sid)
         if kind == 'playlist':
             return spotify.playlist_tracks_from_id(sid)
-    except Exception as exc:
+    except Exception:
         logger.exception('Failed to resolve Spotify URL {}', url)
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        # 🛡️ SECURITY: Never expose raw exception messages to clients.
+        # Internal errors from network libs / yt-dlp can contain file
+        # paths, credentials, or detailed system info. Log server-side only.
+        raise HTTPException(
+            status_code=502, detail='Failed to resolve Spotify URL'
+        )
     raise HTTPException(
         status_code=400, detail=f'Unsupported entity type: {kind}'
     )
@@ -445,8 +450,12 @@ async def download_endpoint(
 
     try:
         filename = await _run_download(song, song_id)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception:
+        # 🛡️ SECURITY: Exception messages from yt-dlp / mutagen / network
+        # libraries can contain internal paths, YouTube session tokens,
+        # or cookie values. Log the full error server-side; return an
+        # opaque message to the client.
+        raise HTTPException(status_code=500, detail='Download failed')
     return filename
 
 
@@ -626,9 +635,13 @@ async def write_playlist_m3u_endpoint(request: Request) -> dict[str, Any]:
         playlist_name, _ = await asyncio.to_thread(
             spotify.playlist_info_and_tracks, parsed[1]
         )
-    except Exception as exc:
+    except Exception:
         logger.exception('Failed to resolve playlist {}', playlist_url)
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        # 🛡️ SECURITY: Same principle as _resolve_url — keep internal
+        # error details server-side only.
+        raise HTTPException(
+            status_code=502, detail='Failed to resolve playlist'
+        )
 
     entries = [t for t in tracks if isinstance(t, dict)]
     playlist_subdir = m3u.sanitize_playlist_name(playlist_name)
