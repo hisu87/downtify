@@ -15,52 +15,70 @@ const userQueue = ref([])
 const history = ref([])
 const currentTrack = ref(null)
 
-let audio = null
+const isAutomix = ref(localStorage.getItem('downtify-automix') === 'true')
+const crossfadeDuration = ref(parseInt(localStorage.getItem('downtify-crossfade')) || 0)
+
+watch(isAutomix, (val) => localStorage.setItem('downtify-automix', String(val)))
+watch(crossfadeDuration, (val) => localStorage.setItem('downtify-crossfade', String(val)))
+
+let deckA = new Audio()
+let deckB = new Audio()
+let activeDeck = deckA
+let standbyDeck = deckB
+
 let shuffleOrder = []
 let shufflePos = 0
+let shuffledQueueOrder = []
 
 let rafId = null
+let activeFadeJob = null
+let fadeIntervalId = null
 
-function updateTime() {
-  if (audio && isPlaying.value) {
-    currentTime.value = audio.currentTime
-    rafId = requestAnimationFrame(updateTime)
-  }
+const displayQueue = computed(() => {
+  if (!shuffle.value) return userQueue.value
+  return shuffledQueueOrder.map((idx) => userQueue.value[idx])
+})
+
+function setupDeck(deck) {
+  deck.preload = 'metadata'
+  deck.volume = volume.value
+  deck.addEventListener('loadedmetadata', () => {
+    if (deck === activeDeck) {
+      duration.value = isFinite(deck.duration) ? deck.duration : 0
+    }
+  })
+  deck.addEventListener('durationchange', () => {
+    if (deck === activeDeck) {
+      duration.value = isFinite(deck.duration) ? deck.duration : 0
+    }
+  })
+  deck.addEventListener('ended', onEnded)
+  deck.addEventListener('play', () => {
+    if (deck === activeDeck) {
+      isPlaying.value = true
+      if (!rafId) rafId = requestAnimationFrame(updateTime)
+      updateMediaSessionPosition()
+    }
+  })
+  deck.addEventListener('pause', () => {
+    if (deck === activeDeck && !activeFadeJob) {
+      isPlaying.value = false
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+        rafId = null
+      }
+      currentTime.value = activeDeck.currentTime
+      updateMediaSessionPosition()
+    }
+  })
 }
 
-function ensureAudio() {
-  if (audio) return audio
-  audio = new Audio()
-  audio.preload = 'metadata'
-  audio.volume = volume.value
+setupDeck(deckA)
+setupDeck(deckB)
+setupMediaSession()
 
-  // We don't use timeupdate anymore to achieve 60fps sync
-  audio.addEventListener('loadedmetadata', () => {
-    duration.value = isFinite(audio.duration) ? audio.duration : 0
-  })
-  audio.addEventListener('durationchange', () => {
-    duration.value = isFinite(audio.duration) ? audio.duration : 0
-  })
-  audio.addEventListener('ended', onEnded)
-  audio.addEventListener('play', () => {
-    isPlaying.value = true
-    if (!rafId) {
-      rafId = requestAnimationFrame(updateTime)
-    }
-    updateMediaSessionPosition()
-  })
-  audio.addEventListener('pause', () => {
-    isPlaying.value = false
-    if (rafId) {
-      cancelAnimationFrame(rafId)
-      rafId = null
-    }
-    // Final sync
-    if (audio) currentTime.value = audio.currentTime
-    updateMediaSessionPosition()
-  })
-  setupMediaSession()
-  return audio
+function getAudio() {
+  return activeDeck
 }
 
 function fileUrl(file) {
@@ -102,6 +120,15 @@ function buildShuffleOrder() {
       : 0
 }
 
+function rebuildQueueShuffle() {
+  const indices = userQueue.value.map((_, i) => i)
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[indices[i], indices[j]] = [indices[j], indices[i]]
+  }
+  shuffledQueueOrder = indices
+}
+
 function setPlaylist(files, options = {}) {
   const tracks = (files || []).map((f) =>
     typeof f === 'string' ? trackFromFile(f) : f
@@ -116,22 +143,55 @@ function setPlaylist(files, options = {}) {
   }
 }
 
+function abortActiveFadeJob() {
+  if (activeFadeJob) {
+    clearInterval(fadeIntervalId)
+    activeFadeJob = null
+    standbyDeck.pause()
+    standbyDeck.currentTime = 0
+    activeDeck.volume = isMuted.value ? 0 : volume.value
+  }
+}
+
+async function safeSeekAndPlay(deck, targetTime) {
+  if (deck.readyState < 1) {
+    await new Promise((res) => {
+      const h = () => {
+        deck.removeEventListener('loadedmetadata', h)
+        res()
+      }
+      deck.addEventListener('loadedmetadata', h)
+    })
+  }
+  deck.currentTime = targetTime
+  await deck.play().catch(() => {})
+}
+
 function _playTrack(track, isGoingBack = false) {
-  const a = ensureAudio()
+  abortActiveFadeJob()
 
   if (currentTrack.value && !isGoingBack) {
     history.value.push(currentTrack.value)
   }
 
   currentTrack.value = track
-  a.src = track.url
-  a.currentTime = 0
+  activeDeck.src = track.url
+
+  if (isAutomix.value) {
+    safeSeekAndPlay(activeDeck, 2.5)
+  } else {
+    activeDeck.currentTime = 0
+    activeDeck.play().catch(() => {})
+  }
+
   currentTime.value = 0
-  a.play().catch(() => {})
+  updateMediaSession()
 }
 
 function playAt(index) {
   if (index < 0 || index >= playlist.value.length) return
+  abortActiveFadeJob()
+  
   currentIndex.value = index
   if (shuffle.value) {
     if (shuffleOrder.length !== playlist.value.length) buildShuffleOrder()
@@ -148,20 +208,36 @@ function play() {
     !currentTrack.value
   )
     return
-  const a = ensureAudio()
 
   if (!currentTrack.value) {
     next()
     return
   }
-  if (!a.src) {
-    a.src = currentTrack.value.url
+  
+  if (activeFadeJob) {
+    // Resume fade
+    activeDeck.play().catch(() => {})
+    standbyDeck.play().catch(() => {})
+    isPlaying.value = true
+    const stepTime = (activeFadeJob.durationSec * 1000) / activeFadeJob.steps
+    runFadeInterval(stepTime)
+  } else {
+    if (!activeDeck.src) {
+      activeDeck.src = currentTrack.value.url
+    }
+    activeDeck.play().catch(() => {})
   }
-  a.play().catch(() => {})
 }
 
 function pause() {
-  if (audio) audio.pause()
+  if (activeFadeJob) {
+    clearInterval(fadeIntervalId)
+    activeDeck.pause()
+    standbyDeck.pause()
+    isPlaying.value = false
+  } else {
+    activeDeck.pause()
+  }
 }
 
 function toggle() {
@@ -170,10 +246,9 @@ function toggle() {
 }
 
 function seek(seconds) {
-  const a = ensureAudio()
   const max = duration.value || 0
   const clamped = Math.max(0, Math.min(max, seconds))
-  a.currentTime = clamped
+  activeDeck.currentTime = clamped
   currentTime.value = clamped
   updateMediaSessionPosition()
 }
@@ -186,7 +261,11 @@ function seekRatio(ratio) {
 function setVolume(v) {
   const clamped = Math.max(0, Math.min(1, v))
   volume.value = clamped
-  if (audio) audio.volume = clamped
+  if (activeFadeJob) {
+    activeFadeJob.targetVol = clamped
+  } else {
+    activeDeck.volume = clamped
+  }
   try {
     localStorage.setItem(VOLUME_KEY, String(clamped))
   } catch {
@@ -194,17 +273,32 @@ function setVolume(v) {
   }
   if (clamped > 0 && isMuted.value) {
     isMuted.value = false
-    if (audio) audio.muted = false
+    activeDeck.muted = false
+    standbyDeck.muted = false
   }
 }
 
 function toggleMute() {
   isMuted.value = !isMuted.value
-  if (audio) audio.muted = isMuted.value
+  activeDeck.muted = isMuted.value
+  standbyDeck.muted = isMuted.value
 }
 
 function nextIndex() {
   if (playlist.value.length === 0) return -1
+  
+  if (isAutomix.value && currentTrack.value) {
+    const candidates = playlist.value.map((t, idx) => ({ t, idx })).filter(x => 
+      x.idx !== currentIndex.value && 
+      ( (x.t.artist && x.t.artist === currentTrack.value.artist) || 
+        (x.t.genre && x.t.genre === currentTrack.value.genre) )
+    )
+    if (candidates.length > 0) {
+      const pick = candidates[Math.floor(Math.random() * candidates.length)]
+      return pick.idx
+    }
+  }
+
   if (shuffle.value) {
     if (shuffleOrder.length !== playlist.value.length) buildShuffleOrder()
     const nextPos = (shufflePos + 1) % shuffleOrder.length
@@ -232,8 +326,20 @@ function prevIndex() {
 }
 
 function next() {
+  abortActiveFadeJob()
+
   if (userQueue.value.length > 0) {
-    _playTrack(userQueue.value.shift())
+    let trackToPlay = null
+    if (shuffle.value) {
+      const rawIdx = shuffledQueueOrder.shift()
+      for (let i = 0; i < shuffledQueueOrder.length; i++) {
+        if (shuffledQueueOrder[i] > rawIdx) shuffledQueueOrder[i]--
+      }
+      trackToPlay = userQueue.value.splice(rawIdx, 1)[0]
+    } else {
+      trackToPlay = userQueue.value.shift()
+    }
+    _playTrack(trackToPlay)
     return
   }
 
@@ -246,8 +352,9 @@ function next() {
 }
 
 function prev() {
-  const a = ensureAudio()
-  if (a.currentTime > 3 || history.value.length === 0) {
+  abortActiveFadeJob()
+
+  if (activeDeck.currentTime > 3 || history.value.length === 0) {
     seek(0)
     return
   }
@@ -256,6 +363,12 @@ function prev() {
 
   if (currentTrack.value) {
     userQueue.value.unshift(currentTrack.value)
+    if (shuffle.value) {
+      for (let i = 0; i < shuffledQueueOrder.length; i++) {
+        shuffledQueueOrder[i]++
+      }
+      shuffledQueueOrder.unshift(0)
+    }
   }
 
   const idx = playlist.value.findIndex((t) => t.url === prevTrack.url)
@@ -268,18 +381,51 @@ function addToQueue(fileOrTrack) {
   const track =
     typeof fileOrTrack === 'string' ? trackFromFile(fileOrTrack) : fileOrTrack
   userQueue.value.push(track)
+  if (shuffle.value) {
+    const newIdx = userQueue.value.length - 1
+    const insertPos = Math.floor(Math.random() * (shuffledQueueOrder.length + 1))
+    shuffledQueueOrder.splice(insertPos, 0, newIdx)
+  }
 }
 
 function playNext(fileOrTrack) {
   const track =
     typeof fileOrTrack === 'string' ? trackFromFile(fileOrTrack) : fileOrTrack
   userQueue.value.unshift(track)
+  if (shuffle.value) {
+    for (let i = 0; i < shuffledQueueOrder.length; i++) {
+      shuffledQueueOrder[i]++
+    }
+    shuffledQueueOrder.unshift(0)
+  }
 }
 
-function onEnded() {
+function removeFromQueue(displayIndex) {
+  if (displayIndex < 0 || displayIndex >= displayQueue.value.length) return
+  let rawIndex = displayIndex
+  if (shuffle.value) {
+    rawIndex = shuffledQueueOrder[displayIndex]
+    shuffledQueueOrder.splice(displayIndex, 1)
+    for (let i = 0; i < shuffledQueueOrder.length; i++) {
+      if (shuffledQueueOrder[i] > rawIndex) {
+        shuffledQueueOrder[i]--
+      }
+    }
+  }
+  userQueue.value.splice(rawIndex, 1)
+}
+
+function clearQueue() {
+  userQueue.value = []
+  shuffledQueueOrder = []
+}
+
+function onEnded(event) {
+  // Ghost Ended Trigger safeguard
+  if (event.target !== activeDeck) return
+
   if (repeatMode.value === 'one') {
-    seek(0)
-    if (audio) audio.play().catch(() => {})
+    safeSeekAndPlay(activeDeck, 0)
     return
   }
   next()
@@ -297,25 +443,127 @@ function cycleRepeat() {
 
 function setShuffle(v) {
   shuffle.value = !!v
-  if (shuffle.value) buildShuffleOrder()
+  if (shuffle.value) {
+    buildShuffleOrder()
+    rebuildQueueShuffle()
+  }
 }
 
 function toggleShuffle() {
   setShuffle(!shuffle.value)
 }
 
+function updateTime() {
+  if (activeDeck && isPlaying.value) {
+    currentTime.value = activeDeck.currentTime
+    
+    const effectiveCrossfade = isAutomix.value ? 6.0 : crossfadeDuration.value
+    const timeLeft = activeDeck.duration - activeDeck.currentTime
+    const triggerTime = isAutomix.value ? (effectiveCrossfade + 2.0) : effectiveCrossfade
+
+    if (effectiveCrossfade > 0 && timeLeft > 0 && timeLeft <= triggerTime && !activeFadeJob) {
+      startCrossfade(effectiveCrossfade)
+    }
+
+    rafId = requestAnimationFrame(updateTime)
+  }
+}
+
+let nextTrackObjForFade = null
+
+function startCrossfade(durationSec) {
+  let trackToPlay = null
+  let useAutomixOffset = isAutomix.value
+
+  if (userQueue.value.length > 0) {
+    if (shuffle.value) {
+      const rawIdx = shuffledQueueOrder.shift()
+      for (let i = 0; i < shuffledQueueOrder.length; i++) {
+        if (shuffledQueueOrder[i] > rawIdx) shuffledQueueOrder[i]--
+      }
+      trackToPlay = userQueue.value.splice(rawIdx, 1)[0]
+    } else {
+      trackToPlay = userQueue.value.shift()
+    }
+  } else {
+    const nIdx = nextIndex()
+    if (nIdx < 0) return 
+    currentIndex.value = nIdx
+    trackToPlay = playlist.value[nIdx]
+  }
+
+  nextTrackObjForFade = trackToPlay
+  standbyDeck.src = trackToPlay.url
+  standbyDeck.volume = 0
+  
+  if (useAutomixOffset) {
+    safeSeekAndPlay(standbyDeck, 2.5)
+  } else {
+    standbyDeck.currentTime = 0
+    standbyDeck.play().catch(()=>{})
+  }
+
+  const steps = 50
+  const stepTime = (durationSec * 1000) / steps
+  const targetVol = isMuted.value ? 0 : volume.value
+
+  activeFadeJob = {
+    steps,
+    currentStep: 0,
+    targetVol,
+    durationSec
+  }
+
+  runFadeInterval(stepTime)
+}
+
+function runFadeInterval(stepTime) {
+  fadeIntervalId = setInterval(() => {
+    if (!isPlaying.value) return 
+    
+    activeFadeJob.currentStep++
+    const t = activeFadeJob.currentStep / activeFadeJob.steps
+    
+    // Logarithmic (quadratic) curve for natural human hearing perception
+    const volA = Math.max(0, activeFadeJob.targetVol * Math.pow(1 - t, 2))
+    const volB = Math.min(activeFadeJob.targetVol, activeFadeJob.targetVol * Math.pow(t, 2))
+    
+    activeDeck.volume = volA
+    standbyDeck.volume = volB
+
+    if (activeFadeJob.currentStep >= activeFadeJob.steps) {
+      clearInterval(fadeIntervalId)
+      completeHandoff()
+    }
+  }, stepTime)
+}
+
+function completeHandoff() {
+  activeDeck.pause()
+  activeDeck.volume = isMuted.value ? 0 : volume.value 
+  
+  const temp = activeDeck
+  activeDeck = standbyDeck
+  standbyDeck = temp
+
+  if (currentTrack.value) {
+    history.value.push(currentTrack.value)
+  }
+
+  currentTrack.value = nextTrackObjForFade
+  duration.value = isFinite(activeDeck.duration) ? activeDeck.duration : 0
+  activeFadeJob = null
+  
+  updateMediaSession()
+}
+
 const progressPct = computed(() =>
   duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
 )
 
-watch(currentTrack, () => {
-  updateMediaSession()
-})
-
 function updateMediaSession() {
   if ('mediaSession' in navigator && currentTrack.value) {
     const track = currentTrack.value
-    // Use full URL for cover so MediaSession correctly resolves it
     const coverFullUrl = new URL(track.cover, window.location.origin).href
 
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -331,18 +579,18 @@ function updateMediaSession() {
 function updateMediaSessionPosition() {
   if (
     'mediaSession' in navigator &&
-    audio &&
-    isFinite(audio.duration) &&
-    audio.duration > 0
+    activeDeck &&
+    isFinite(activeDeck.duration) &&
+    activeDeck.duration > 0
   ) {
     try {
       navigator.mediaSession.setPositionState({
-        duration: audio.duration,
-        playbackRate: audio.playbackRate,
-        position: audio.currentTime,
+        duration: activeDeck.duration,
+        playbackRate: activeDeck.playbackRate,
+        position: activeDeck.currentTime,
       })
     } catch (e) {
-      // Ignore errors if position state is invalid
+      // Ignore
     }
   }
 }
@@ -375,6 +623,7 @@ export function usePlayer() {
   return {
     playlist,
     userQueue,
+    displayQueue,
     history,
     currentIndex,
     currentTrack,
@@ -386,9 +635,13 @@ export function usePlayer() {
     isMuted,
     repeatMode,
     shuffle,
+    isAutomix,
+    crossfadeDuration,
     setPlaylist,
     addToQueue,
     playNext,
+    removeFromQueue,
+    clearQueue,
     playAt,
     play,
     pause,
@@ -402,6 +655,8 @@ export function usePlayer() {
     setRepeat,
     setShuffle,
     toggleShuffle,
-    getAudio: ensureAudio,
+    getAudio,
+    getShufflePos: () => shufflePos,
+    getShuffleOrder: () => shuffleOrder
   }
 }

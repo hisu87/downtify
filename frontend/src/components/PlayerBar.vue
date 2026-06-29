@@ -58,9 +58,8 @@
       <div class="flex items-center gap-1 sm:gap-2 lg:hidden">
         <button
           class="icon-btn h-11 w-11 min-w-[44px] min-h-[44px]"
-          :class="{ 'text-[#FA233B]': isLyricsOpen }"
           :disabled="!hasTracks"
-          @click="$emit('open-lyrics')"
+          @click="router.push('/lyrics')"
           title="Lyrics"
           aria-label="Lyrics"
         >
@@ -184,18 +183,18 @@
 
         <button
           class="icon-btn"
-          @click="router.push({ name: 'Download' })"
+          :class="{ 'icon-btn-active': layout.isQueueOpen.value }"
+          @click="layout.toggleQueue()"
           title="Queue"
           aria-label="Queue"
         >
-          <Icon icon="clarity:download-line" class="h-5 w-5" />
+          <Icon icon="clarity:list-line" class="h-5 w-5" />
         </button>
 
         <button
           class="icon-btn hidden sm:inline-flex"
-          :class="{ 'icon-btn-active': isLyricsOpen }"
           :disabled="!hasTracks"
-          @click="$emit('open-lyrics')"
+          @click="router.push('/lyrics')"
           title="Lyrics"
           aria-label="Lyrics"
         >

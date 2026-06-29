@@ -59,9 +59,8 @@ export class LyricsAnimator {
     if (!el) return
     const key = `${lineIdx}-${isBg ? 'bg' : 'lead'}-${wordIdx}`
     this._wordEls.set(key, { word: el })
-    el.style.willChange = 'opacity, mask-image, transform' // GPU hint (Giai đoạn 4.3)
+    el.style.willChange = 'opacity, mask-image, transform' // GPU hint
     el.style.backfaceVisibility = 'hidden'
-    el.style.transform = 'translate3d(0, 0, 0)'
   }
 
   unregisterWord(lineIdx, wordIdx, isBg = false) {
@@ -261,7 +260,7 @@ export class LyricsAnimator {
         goals[wi].scale = SCALE_SUNG
         goals[wi].y = 0
         goals[wi].glow = 0
-        goals[wi].fill = 100
+        goals[wi].fill = 120
         goals[wi].opacity = 0.85
       } else {
         // FUTURE
@@ -333,43 +332,28 @@ export class LyricsAnimator {
       store.fillSpring.step(dt)
       store.opacitySpring.step(dt)
 
-      const scale = Math.max(0.92, Math.min(1.06, store.scaleSpring.position))
-      const y = Math.max(-3, Math.min(3, store.ySpring.position))
-      const glow = store.glowSpring.position
-      const fill = Math.max(0, Math.min(100, store.fillSpring.position))
+      const fill = Math.max(0, Math.min(120, store.fillSpring.position))
       const opacity = Math.max(0, Math.min(1, store.opacitySpring.position))
+      const glow = store.glowSpring.position
 
-      setStyleIfChanged(
-        wordEl,
-        'transform',
-        `translate3d(0, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`,
-        0.0005
-      )
+      // Kích hoạt nảy chữ (Spicy Word-Bounce)
+      if (fill > 0 && fill < 100) {
+        setStyleIfChanged(wordEl, 'transform', 'scale(1.05)', 0)
+      } else {
+        setStyleIfChanged(wordEl, 'transform', 'scale(1)', 0)
+      }
 
       if (!isMobile) {
         const glowClamped = Math.max(0, Math.min(1, glow))
-        setStyleIfChanged(
-          wordEl,
-          '--glow-opacity',
-          glowClamped.toFixed(3),
-          0.005
-        )
-        setStyleIfChanged(
-          wordEl,
-          '--glow-blur',
-          `${(glowClamped * 18).toFixed(1)}px`,
-          0.3
-        )
+        setStyleIfChanged(wordEl, '--glow-opacity', glowClamped.toFixed(3), 0.005)
+        setStyleIfChanged(wordEl, '--glow-scale', (glowClamped * 1.5).toFixed(3), 0.01)
       } else {
         setStyleIfChanged(wordEl, '--glow-opacity', '0', 0)
-        setStyleIfChanged(wordEl, '--glow-blur', '0px', 0)
+        setStyleIfChanged(wordEl, '--glow-scale', '0', 0)
       }
 
       setStyleIfChanged(wordEl, '--fill-pct', `${fill.toFixed(1)}%`, 0.4)
-      setStyleIfChanged(wordEl, '--hl-opacity', opacity.toFixed(3), 0.004)
-
-      const baseOpacity = Math.max(0.12, opacity * 0.35)
-      setStyleIfChanged(wordEl, '--base-opacity', baseOpacity.toFixed(3), 0.004)
+      setStyleIfChanged(wordEl, '--hl-opacity', opacity.toFixed(3), 0.005)
     }
   }
 
@@ -388,37 +372,7 @@ export class LyricsAnimator {
   }
 
   _applyLineBlur(activeLineFrac) {
-    for (const [lineIdx, el] of this._lineEls) {
-      if (!el || !el.isConnected) continue
-      if (activeLineFrac < 0) {
-        setStyleIfChanged(el, 'filter', 'none', 0)
-        setStyleIfChanged(el, 'transform', 'none', 0)
-        continue
-      }
-
-      const dist = Math.abs(lineIdx - activeLineFrac)
-      let blurPx = 0
-      let scale = 0.92
-
-      if (dist < 1) {
-        const t = dist
-        scale = 1.06 - t * (1.06 - 0.95)
-        blurPx = t * 0.4
-      } else {
-        const t = Math.min(3, dist - 1)
-        scale = 0.95 - t * 0.02
-        blurPx = 0.4 + (dist - 1) * 0.8
-        blurPx = Math.min(MAX_LINE_BLUR, blurPx)
-      }
-
-      setStyleIfChanged(
-        el,
-        'filter',
-        blurPx < 0.15 ? 'none' : `blur(${blurPx.toFixed(1)}px)`,
-        0.08
-      )
-      setStyleIfChanged(el, 'transform', `scale(${scale.toFixed(3)})`, 0.005)
-    }
+    // Controlled by CSS classes (.active, .passed, .future) in LyricsView.vue
   }
 
   setScrollGoal(targetY) {
