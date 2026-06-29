@@ -1,19 +1,19 @@
 <template>
   <transition name="lyrics-modal">
     <div
-      v-if="isOpen"
-      class="lyrics-root fixed inset-0 z-[100] flex flex-col overflow-hidden"
+      v-if="isOpen || inline"
+      :class="
+        inline
+          ? 'lyrics-root relative h-full flex flex-col overflow-hidden lyrics-inline-mode'
+          : 'lyrics-root fixed inset-0 z-[100] flex flex-col overflow-hidden'
+      "
       @touchstart="onTouchStart"
       @touchend="onTouchEnd"
       @mouseup="cancelScrub"
       @touchend.passive="cancelScrub"
     >
-      <!-- ─── Background (blurred album art) ─── -->
-      <div class="lyrics-bg" :style="bgStyle"></div>
-      <div class="lyrics-bg-overlay"></div>
-
       <!-- ─── Top Nav ─── -->
-      <div class="lyrics-nav">
+      <div v-if="!inline" class="lyrics-nav">
         <button
           class="icon-btn"
           @click="close"
@@ -41,7 +41,7 @@
 
         <!-- No lyrics -->
         <div v-else-if="!parsedLyrics.length" class="lyrics-state opacity-40">
-          No synced lyrics available.
+          <p>No synced lyrics available.</p>
         </div>
 
         <!-- Lyrics list -->
@@ -66,6 +66,9 @@
               {
                 'scrubbing-active': isScrubbing && scrubLineIdx === item.index,
                 'scrubbing-dimmed': isScrubbing && scrubLineIdx !== item.index,
+                active: item.index === activeLineIdx,
+                passed: item.index < activeLineIdx,
+                future: item.index > activeLineIdx,
               },
             ]"
             :ref="(el) => registerLineEl(item.index, el)"
@@ -160,7 +163,10 @@ import api from '../model/api'
 import { LyricsAnimator } from '../utils/lyrics/LyricsAnimator.js'
 
 // ─── Props / Emits ────────────────────────────────────────────────────────────
-const props = defineProps({ isOpen: Boolean })
+const props = defineProps({
+  isOpen: Boolean,
+  inline: { type: Boolean, default: false },
+})
 const emit = defineEmits(['close'])
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
@@ -378,23 +384,26 @@ const bgStyle = computed(() => ({
 }))
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
+const isActive = computed(() => props.isOpen || props.inline)
+
 watch(
-  () => props.isOpen,
-  (open) => {
-    if (open) {
+  isActive,
+  (active) => {
+    if (active) {
       fetchLyrics()
       animator.start()
     } else {
       animator.stop()
     }
-  }
+  },
+  { immediate: true }
 )
 
 watch(
   () => currentTrack.value?.title,
   (newTitle) => {
     if (newTitle) prefetchLyrics()
-    if (props.isOpen) {
+    if (isActive.value) {
       parsedLyrics.value = []
       activeLineIdx.value = -1
       scrollY.value = 0
@@ -464,7 +473,7 @@ async function fetchLyrics() {
   try {
     const ast = await getLyrics(key)
     if (_lastFetchId !== reqId) return
-    applyLyrics(ast.lines)
+    applyLyrics(ast)
     loading.value = false
   } catch (err) {
     if (_lastFetchId === reqId) {
@@ -520,9 +529,15 @@ async function doFetch(key) {
 
 function applyLyrics(ast) {
   loading.value = false
+
+  if (!ast) {
+    error.value = 'No synced lyrics available.'
+    return
+  }
+
   const lines = ast.lines || ast
-  if (!Array.isArray(lines)) {
-    error.value = 'Invalid lyrics format'
+  if (!Array.isArray(lines) || lines.length === 0) {
+    error.value = 'No synced lyrics available.'
     return
   }
   syncType.value = ast.sync_type || ast.syncType || ast.granularity || 'word'
@@ -580,22 +595,21 @@ function applyLyrics(ast) {
   overscroll-behavior: contain;
 }
 
-.lyrics-bg {
-  position: absolute;
-  inset: -10%;
-  z-index: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(70px) saturate(180%) brightness(0.6);
-  transform: scale(1.15);
-  transition: background-image 1.2s ease;
+.lyrics-inline-mode {
+  container-type: inline-size;
 }
-.lyrics-bg-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(4px);
+
+.lyrics-inline-mode .lyric-word,
+.lyrics-inline-mode .lead-line-text {
+  font-size: clamp(1.25rem, 8cqi, 1.75rem) !important;
+}
+
+.lyrics-inline-mode .lyric-instrument {
+  font-size: clamp(1.5rem, 10cqi, 2rem) !important;
+}
+
+.lyrics-inline-mode .lyric-line {
+  margin-bottom: 1.5rem !important;
 }
 
 .lyrics-nav {
@@ -650,14 +664,36 @@ function applyLyrics(ast) {
 .lyric-line {
   display: flex;
   width: 100%;
-  padding: 0.4rem 0;
   margin-bottom: 2.5rem;
-  line-height: 1.1;
   cursor: pointer;
   will-change: filter, transform;
+  line-height: 1.55; /* Mở trần cho dấu Tiếng Việt thở */
+  padding: 0.75rem 0;
+  overflow: visible !important;
+  transform-origin: left center;
   transition:
-    transform 0.25s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.2s ease;
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.45s ease,
+    filter 0.45s ease;
+}
+
+/* HỆ THỐNG PHÂN CẤP DÒNG CHUẨN SPICY LYRICS */
+.lyric-line.future {
+  opacity: 0.35;
+  transform: scale(1);
+}
+
+.lyric-line.active {
+  opacity: 1;
+  transform: scale(
+    1.04
+  ); /* Dòng đang hát phóng to nhẹ mang lại cảm giác sống động */
+}
+
+.lyric-line.passed {
+  opacity: 0.22; /* Dòng đã hát chìm sâu xuống đáy */
+  transform: scale(0.98);
+  filter: blur(0.7px); /* Đặc sản "nhòe dĩ vãng" của SpicyLyrics */
 }
 
 .scrubbing-active {
@@ -728,51 +764,96 @@ function applyLyrics(ast) {
 }
 
 .lyric-word {
-  position: relative;
   display: inline-block;
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 0) scale(var(--word-scale, 1));
-  margin-right: 0.1em;
+  position: relative;
+  white-space: pre;
+  margin-right: 0.12em;
+  color: rgba(255, 255, 255, 0.22); /* Chữ xám nền lúc chưa hát tới */
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); /* Nhịp nảy lò xo micro-bounce */
+
+  /* Preserve necessary structural properties */
   margin-bottom: 0.25em;
-  transform-origin: bottom center;
   cursor: pointer;
   backface-visibility: hidden;
   font-size: clamp(1.6rem, 4.5vw, 3.75rem);
-  font-weight: 900;
-  letter-spacing: 0.05rem;
-  color: rgba(255, 255, 255, var(--base-opacity, 0.35)); /* Base color */
-  transition: opacity 0.2s;
-  white-space: pre;
 }
 
 .lyric-word[data-has-space='true'] {
   margin-right: 0.35em;
 }
 
+/* 3. THẦN CHÚ KHẮC PHỤC GLOW HÌNH CHỮ NHẬT VÀ THÊM PARTICLES (RELATIVE `em` SCALE) */
 .lyric-word::before {
+  content: '';
+  position: absolute;
+  inset: -1.2em -0.6em; /* Phủ rộng hơn chữ theo tỷ lệ font-size */
+  pointer-events: none;
+  z-index: 10;
+
+  /* Tạo ra các đốm sáng (particles) kích thước tính theo em để scale chuẩn trên màn High-DPI/Retina */
+  background:
+    radial-gradient(
+      circle at calc(var(--fill-pct, 0%) * 1.2) 20%,
+      rgba(255, 255, 255, 1) 0%,
+      transparent 0.15em
+    ),
+    radial-gradient(
+      circle at calc(var(--fill-pct, 0%) * 1.2 - 5%) 85%,
+      rgba(255, 255, 255, 0.9) 0%,
+      transparent 0.25em
+    ),
+    radial-gradient(
+      circle at calc(var(--fill-pct, 0%) * 1.2 - 10%) 50%,
+      var(--dynamic-primary, rgba(255, 255, 255, 0.8)) 0%,
+      transparent 0.7em
+    ),
+    radial-gradient(
+      circle at calc(var(--fill-pct, 0%) * 1.2 + 5%) 60%,
+      rgba(255, 255, 255, 1) 0%,
+      transparent 0.1em
+    );
+
+  filter: blur(0.02em) drop-shadow(0 0 0.3em rgba(255, 255, 255, 1));
+  mix-blend-mode: color-dodge;
+
+  opacity: var(--glow-opacity, 0);
+  will-change: opacity;
+}
+
+.lyric-word::after {
   content: attr(data-text);
   position: absolute;
   left: 0;
   top: 0;
-  color: var(--dynamic-highlight, white);
-  text-shadow: 0 0 calc(var(--glow-blur, 0px) * 1.5)
-    rgba(255, 255, 255, calc(var(--glow-opacity, 0) * 1.2));
-  opacity: var(--hl-opacity, 0.01);
+  color: var(--dynamic-highlight, #ffffff);
+
+  /* Đổ bóng rực rỡ 3 lớp theo tỷ lệ tương đối với chữ (Responsive Glow) */
+  text-shadow:
+    0 0 calc(var(--glow-scale, 0) * 0.4em)
+      var(--dynamic-primary, rgba(255, 255, 255, 1)),
+    0 0 calc(var(--glow-scale, 0) * 0.9em)
+      var(--dynamic-primary, rgba(255, 255, 255, 0.85)),
+    0 0 calc(var(--glow-scale, 0) * 1.8em)
+      var(--dynamic-primary, rgba(255, 255, 255, 0.5));
+
+  /* Quét Karaoke mượt, đảm bảo đen 100% khi fill=120% */
   -webkit-mask-image: linear-gradient(
     90deg,
-    black calc(var(--fill-pct, 0%) - 18%),
-    transparent var(--fill-pct, 0%),
-    transparent 100%
+    #000 calc(var(--fill-pct, 0%) * 1.2 - 20%),
+    transparent calc(var(--fill-pct, 0%) * 1.2)
   );
   mask-image: linear-gradient(
     90deg,
-    black calc(var(--fill-pct, 0%) - 18%),
-    transparent var(--fill-pct, 0%),
-    transparent 100%
+    #000 calc(var(--fill-pct, 0%) * 1.2 - 20%),
+    transparent calc(var(--fill-pct, 0%) * 1.2)
   );
+
+  opacity: var(--hl-opacity, 0);
   will-change:
     opacity,
-    mask-image,
     -webkit-mask-image;
 }
 
