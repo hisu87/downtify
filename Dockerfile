@@ -22,7 +22,7 @@ LABEL maintainer="hisu87"
 LABEL version="3.2.0"
 LABEL description="Self-hosted Spotify downloader"
 
-LABEL org.opencontainers.image.title="Downtify" \
+LABEL org.opencontainers.image.title="Hify" \
       org.opencontainers.image.description="Download your Spotify playlists and songs along with album art and metadata in a self-hosted way via Docker" \
       org.opencontainers.image.version="3.2.0" \
       org.opencontainers.image.authors="Henrique Sebastião <contato@henriquesebastiao.com>" \
