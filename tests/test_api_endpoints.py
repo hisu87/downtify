@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from downtify.api import check_update, get_version, router
+from hify.api import check_update, get_version, router
 
 
 def test_check_update_function_returns_none():

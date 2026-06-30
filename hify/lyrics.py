@@ -30,8 +30,8 @@ from mutagen.mp4 import MP4
 from mutagen.oggopus import OggOpus
 from mutagen.oggvorbis import OggVorbis
 
-from downtify.lyrics_db import cache_lyrics, get_cached_lyrics
-from downtify.smart_matching import is_metadata_match
+from hify.lyrics_db import cache_lyrics, get_cached_lyrics
+from hify.smart_matching import is_metadata_match
 
 
 @dataclass

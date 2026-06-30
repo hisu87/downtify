@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from downtify.monitor import _is_due
+from hify.monitor import _is_due
 
 
 def test_is_due_returns_true_when_last_checked_is_none():

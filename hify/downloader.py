@@ -96,7 +96,7 @@ class _YtdlpLogger:
 
 
 def _yt_player_clients() -> list[str]:
-    raw = os.getenv('DOWNTIFY_YT_PLAYER_CLIENTS', '').strip()
+    raw = os.getenv('HIFY_YT_PLAYER_CLIENTS', '').strip()
     if not raw:
         return list(_DEFAULT_YT_PLAYER_CLIENTS)
     clients = [c.strip() for c in raw.split(',') if c.strip()]
@@ -108,7 +108,7 @@ def _yt_po_tokens() -> list[str]:
 
     Example: ``mweb.gvs+ABC123,web.gvs+XYZ987``
     """
-    raw = os.getenv('DOWNTIFY_YT_PO_TOKEN', '').strip()
+    raw = os.getenv('HIFY_YT_PO_TOKEN', '').strip()
     if not raw:
         return []
     return [t.strip() for t in raw.split(',') if t.strip()]
@@ -338,8 +338,8 @@ class Downloader:
 
         # Many container setups have IPv6 advertised but unroutable for
         # googlevideo.com, which surfaces as EAI_AGAIN on the AAAA lookup.
-        # Setting DOWNTIFY_FORCE_IPV4=1 binds yt-dlp to IPv4 only.
-        if os.getenv('DOWNTIFY_FORCE_IPV4', '').strip() in {
+        # Setting HIFY_FORCE_IPV4=1 binds yt-dlp to IPv4 only.
+        if os.getenv('HIFY_FORCE_IPV4', '').strip() in {
             '1',
             'true',
             'yes',
@@ -347,15 +347,15 @@ class Downloader:
             ydl_opts['source_address'] = '0.0.0.0'
 
         # Optional cookie support for the rare case where even alternate
-        # player_clients get challenged. DOWNTIFY_COOKIES_FILE points at a
-        # Netscape-format cookies.txt; DOWNTIFY_COOKIES_FROM_BROWSER takes
+        # player_clients get challenged. HIFY_COOKIES_FILE points at a
+        # Netscape-format cookies.txt; HIFY_COOKIES_FROM_BROWSER takes
         # "<browser>" or "<browser>:<profile>" (e.g. "firefox" or
         # "chrome:Default").
-        cookies_file = os.getenv('DOWNTIFY_COOKIES_FILE', '').strip()
+        cookies_file = os.getenv('HIFY_COOKIES_FILE', '').strip()
         if cookies_file:
             ydl_opts['cookiefile'] = cookies_file
         cookies_browser = os.getenv(
-            'DOWNTIFY_COOKIES_FROM_BROWSER', ''
+            'HIFY_COOKIES_FROM_BROWSER', ''
         ).strip()
         if cookies_browser:
             parts = cookies_browser.split(':', 1)

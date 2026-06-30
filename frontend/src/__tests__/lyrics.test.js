@@ -109,7 +109,7 @@ describe('Lyrics Parser and Animator', () => {
     const weirdSpacingLrc = `
 [00:10.00] \t   \t
 [00:15.00]
-[00:20.00] Downtify \t\t rocks   !
+[00:20.00] Hify \t\t rocks   !
     `.trim()
 
     const parsed = parseLrc(weirdSpacingLrc)
@@ -125,7 +125,7 @@ describe('Lyrics Parser and Animator', () => {
     // 3. Irregular tabs and spaces between valid words
     const lineThreeWords = parsed[2].lead
     expect(lineThreeWords).toHaveLength(3)
-    expect(lineThreeWords[0].text).toBe('Downtify')
+    expect(lineThreeWords[0].text).toBe('Hify')
     expect(lineThreeWords[1].text).toBe('rocks')
     expect(lineThreeWords[2].text).toBe('!')
 

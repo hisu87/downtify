@@ -1,6 +1,6 @@
 {
-  "name": "Downtify",
-  "short_name": "Downtify",
+  "name": "Hify",
+  "short_name": "Hify",
   "description": "Self-hosted Spotify downloader and player",
   "start_url": "/",
   "display": "standalone",

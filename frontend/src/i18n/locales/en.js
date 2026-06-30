@@ -101,7 +101,7 @@ export default {
     checkNow: 'Check now',
     stop: 'Stop monitoring',
     deletePrompt: 'Stop monitoring "{name}"?',
-    info: 'When you add a playlist, Downtify downloads every track it currently contains and then keeps watching it. Any songs added later on Spotify are detected and downloaded automatically on the next scheduled check.',
+    info: 'When you add a playlist, Hify downloads every track it currently contains and then keeps watching it. Any songs added later on Spotify are detected and downloaded automatically on the next scheduled check.',
     every15: 'Every 15 min',
     every30: 'Every 30 min',
     every1h: 'Every hour',
@@ -137,7 +137,7 @@ export default {
   },
   settings: {
     title: 'Settings',
-    subtitle: 'Tweak how Downtify fetches and tags your music.',
+    subtitle: 'Tweak how Hify fetches and tags your music.',
     audioSource: 'Audio source',
     lyricsSource: 'Lyrics source',
     lyricsHint: 'only lrclib is active',

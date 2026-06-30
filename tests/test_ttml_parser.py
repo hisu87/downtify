@@ -1,6 +1,6 @@
 """TTML Parsing Utility test"""
 
-from downtify.lyrics import parse_amll_ttml
+from hify.lyrics import parse_amll_ttml
 
 
 def test_parse_amll_ttml():

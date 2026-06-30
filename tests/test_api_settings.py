@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 
-from downtify.api import (
+from hify.api import (
     DEFAULT_SETTINGS,
     _effective_lyrics_providers,
     _load_settings,

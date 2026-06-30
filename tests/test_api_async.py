@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from downtify import api
+from hify import api
 
 
 @pytest.mark.asyncio

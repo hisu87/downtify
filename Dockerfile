@@ -26,23 +26,23 @@ LABEL org.opencontainers.image.title="Hify" \
       org.opencontainers.image.description="Download your Spotify playlists and songs along with album art and metadata in a self-hosted way via Docker" \
       org.opencontainers.image.version="3.2.0" \
       org.opencontainers.image.authors="Henrique Sebastião <contato@henriquesebastiao.com>" \
-      org.opencontainers.image.url="https://github.com/henriquesebastiao/downtify" \
-      org.opencontainers.image.source="https://github.com/hisu87/downtify" \
+      org.opencontainers.image.url="https://github.com/henriquesebastiao/hify" \
+      org.opencontainers.image.source="https://github.com/hisu87/hify" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.documentation="https://github.com/henriquesebastiao/downtify#readme" \
+      org.opencontainers.image.documentation="https://github.com/henriquesebastiao/hify#readme" \
       org.opencontainers.image.vendor="Henrique Sebastião" \
       org.opencontainers.image.base.name="python:3.13-alpine"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHON_COLORS=0 \
-    DOWNTIFY_LOG_LEVEL=info \
-    DOWNTIFY_PORT=8000 \
+    HIFY_LOG_LEVEL=info \
+    HIFY_PORT=8000 \
     UID=1000 \
     GID=1000 \
     UMASK=022
 
-WORKDIR /downtify
+WORKDIR /hify
 
 RUN apk add --no-cache \
     ffmpeg \
@@ -54,17 +54,17 @@ COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY main.py entrypoint.sh ./
-COPY downtify ./downtify
+COPY hify ./hify
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 RUN sed -i 's/\r$//g' entrypoint.sh && \
     chmod +x entrypoint.sh
 
-ENV PATH="/home/downtify/.local/bin:${PATH}"
+ENV PATH="/home/hify/.local/bin:${PATH}"
 
 VOLUME /downloads
 VOLUME /data
 
-EXPOSE ${DOWNTIFY_PORT}
+EXPOSE ${HIFY_PORT}
 
 ENTRYPOINT ["/sbin/tini", "-g", "--", "./entrypoint.sh"]

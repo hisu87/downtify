@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from downtify.telemetry import (
+from hify.telemetry import (
     _collapse_ws,
     json_log_blob,
     redact_sensitive_mapping,
@@ -13,7 +13,7 @@ from downtify.telemetry import (
     ('raw_text', 'expected_output'),
     [
         # 1. Multiple consecutive internal spaces
-        ('Downtify    Audio    Engine', 'Downtify Audio Engine'),
+        ('Hify    Audio    Engine', 'Hify Audio Engine'),
         # 2. Tabs and newlines
         ('Track\nTitle\t\tArtist\r\nAlbum', 'Track Title Artist Album'),
         # 3. Leading and trailing whitespace stripping

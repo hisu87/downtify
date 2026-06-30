@@ -1,6 +1,6 @@
 import difflib
 
-from downtify.smart_matching import clean_title_for_matching, is_metadata_match
+from hify.smart_matching import clean_title_for_matching, is_metadata_match
 
 
 def test_clean_title_for_matching():

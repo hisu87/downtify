@@ -6,7 +6,7 @@ from typing import Optional
 import aiosqlite
 from loguru import logger
 
-DB_PATH = os.environ.get('DOWNTIFY_DATA_DIR', './data') + '/lyrics_cache.db'
+DB_PATH = os.environ.get('HIFY_DATA_DIR', './data') + '/lyrics_cache.db'
 
 
 async def init_db():
@@ -88,7 +88,7 @@ async def cache_lyrics(track_id: str, payload: dict):
                 if not lines:
                     return  # DO NOT CACHE OK if no lines (Cache Poisoning Protection)
 
-                from downtify.lyrics import NormalizedLine  # noqa: PLC0415
+                from hify.lyrics import NormalizedLine  # noqa: PLC0415
 
                 lines_list = []
                 for line in lines:

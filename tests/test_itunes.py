@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from downtify.itunes import _names_match, _normalise
+from hify.itunes import _names_match, _normalise
 
 
 @pytest.mark.parametrize(

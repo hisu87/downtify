@@ -70,8 +70,8 @@ const forceOpenLyrics = () => {
 }
 
 onBeforeMount(() => {
-  themeMgr.setLightAlias('downtify-light')
-  themeMgr.setDarkAlias('downtify-dark')
+  themeMgr.setLightAlias('hify-light')
+  themeMgr.setDarkAlias('hify-dark')
 })
 
 onMounted(() => {

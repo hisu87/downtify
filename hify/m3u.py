@@ -47,7 +47,7 @@ def build_m3u_content(
     exist on disk are skipped (and logged).
 
     Track paths are written **relative to the M3U file's directory** so
-    the same file works whether it's read from inside the Downtify
+    the same file works whether it's read from inside the Hify
     container (``/downloads/...``) or from another consumer that mounts
     the same library at a different root (Jellyfin under
     ``/nas/music/...``, etc). ``m3u_dir`` defaults to

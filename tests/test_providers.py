@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from downtify import providers
-from downtify.providers import (
+from hify import providers
+from hify.providers import (
     _parse_duration,
     enrich_from_match,
     youtube_music_track_index_for_match,

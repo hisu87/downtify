@@ -2,7 +2,7 @@
 
 import re
 
-from downtify.lyrics import (
+from hify.lyrics import (
     AmllTtmlProvider,
     LrcLibProvider,
     MusixmatchTokenProvider,

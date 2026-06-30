@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 
-const VOLUME_KEY = 'downtify-player-volume'
+const VOLUME_KEY = 'hify-player-volume'
 
 const playlist = ref([])
 const currentIndex = ref(-1)
@@ -15,14 +15,14 @@ const userQueue = ref([])
 const history = ref([])
 const currentTrack = ref(null)
 
-const isAutomix = ref(localStorage.getItem('downtify-automix') === 'true')
+const isAutomix = ref(localStorage.getItem('hify-automix') === 'true')
 const crossfadeDuration = ref(
-  parseInt(localStorage.getItem('downtify-crossfade')) || 0
+  parseInt(localStorage.getItem('hify-crossfade')) || 0
 )
 
-watch(isAutomix, (val) => localStorage.setItem('downtify-automix', String(val)))
+watch(isAutomix, (val) => localStorage.setItem('hify-automix', String(val)))
 watch(crossfadeDuration, (val) =>
-  localStorage.setItem('downtify-crossfade', String(val))
+  localStorage.setItem('hify-crossfade', String(val))
 )
 
 let deckA = new Audio()
@@ -588,7 +588,7 @@ function updateMediaSession() {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
       artist: track.artist,
-      album: 'Downtify',
+      album: 'Hify',
       artwork: [{ src: coverFullUrl, sizes: '512x512', type: 'image/jpeg' }],
     })
     updateMediaSessionPosition()

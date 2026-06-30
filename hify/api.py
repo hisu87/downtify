@@ -1,4 +1,4 @@
-"""FastAPI router exposed by Downtify.
+"""FastAPI router exposed by Hify.
 
 The endpoints intentionally mirror the surface that the previous
 ``spotdl``-powered backend exposed so the existing Vue frontend keeps

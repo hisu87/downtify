@@ -17,7 +17,7 @@ export const AVAILABLE_LOCALES = [
 ]
 
 const DEFAULT_LOCALE = 'en'
-const STORAGE_KEY = 'downtify-locale'
+const STORAGE_KEY = 'hify-locale'
 
 const stored = (() => {
   try {

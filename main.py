@@ -1,4 +1,4 @@
-"""Downtify entry point.
+"""Hify entry point.
 
 Boots the FastAPI app that powers the web UI. The previous incarnation
 relied on the Spotify Web API (via ``spotdl`` + ``spotipy``); since that
@@ -32,9 +32,9 @@ from mutagen.oggopus import OggOpus
 from mutagen.oggvorbis import OggVorbis
 from uvicorn import Config, Server
 
-from downtify import __version__, api
-from downtify.downloader import Downloader
-from downtify.monitor import PlaylistMonitorDB, monitor_loop
+from hify import __version__, api
+from hify.downloader import Downloader
+from hify.monitor import PlaylistMonitorDB, monitor_loop
 
 load_dotenv()
 
@@ -82,9 +82,9 @@ def _setup_logging(level: str) -> None:
 
 DOWNLOAD_DIR = Path(os.getenv('DOWNLOAD_DIR', '/downloads'))
 DATABASE_DIR = Path(os.getenv('DATABASE_DIR', '/data'))
-WEB_GUI_LOCATION = os.getenv('WEB_GUI_LOCATION', '/downtify/frontend/dist')
+WEB_GUI_LOCATION = os.getenv('WEB_GUI_LOCATION', '/hify/frontend/dist')
 DEFAULT_HOST = os.getenv('HOST', '0.0.0.0')
-DEFAULT_PORT = int(os.getenv('DOWNTIFY_PORT', os.getenv('PORT', '8000')))
+DEFAULT_PORT = int(os.getenv('HIFY_PORT', os.getenv('PORT', '8000')))
 
 
 class SPAStaticFiles(StaticFiles):
@@ -207,7 +207,7 @@ def build_app() -> FastAPI:
     DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
     app = FastAPI(
-        title='Downtify',
+        title='Hify',
         description=(
             'Download your Spotify playlists and songs along with album '
             'art and metadata in a self-hosted way via Docker.'
@@ -266,7 +266,7 @@ def build_app() -> FastAPI:
         api.state.download_semaphore = asyncio.Semaphore(
             max(1, int(api.state.settings.get('max_parallel_downloads', 3)))
         )
-        db_path = DATABASE_DIR / 'downtify_monitor.db'
+        db_path = DATABASE_DIR / 'hify_monitor.db'
         api.state.monitor_db = PlaylistMonitorDB(db_path)
         asyncio.create_task(
             monitor_loop(
@@ -364,7 +364,7 @@ def build_app() -> FastAPI:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog='downtify')
+    parser = argparse.ArgumentParser(prog='hify')
     # The legacy entrypoint passed ``web`` as the subcommand plus a few
     # spotdl-only flags. We accept and ignore the unsupported ones so
     # existing Docker images keep starting cleanly.
@@ -403,7 +403,7 @@ def main() -> None:
     server = Server(config)
 
     logger.info(
-        'Starting Downtify {} on http://{}:{}',
+        'Starting Hify {} on http://{}:{}',
         __version__,
         args.host,
         args.port,

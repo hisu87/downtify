@@ -1,4 +1,4 @@
-const CACHE_NAME = 'downtify-v1';
+const CACHE_NAME = 'hify-v1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
