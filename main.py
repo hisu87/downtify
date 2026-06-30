@@ -278,11 +278,16 @@ def build_app() -> FastAPI:
             )
         )
 
-    from cachetools import cached, TTLCache
-    
+    import time
+    _list_cache = None
+    _list_cache_time = 0
+
     @app.get('/list')
-    @cached(cache=TTLCache(maxsize=1, ttl=30))
     def list_downloads() -> list[str]:
+        nonlocal _list_cache, _list_cache_time
+        if _list_cache is not None and time.time() - _list_cache_time < 30:
+            return _list_cache
+
         audio_exts = {'.mp3', '.m4a', '.flac', '.ogg', '.wav', '.aac', '.opus'}
         base = DOWNLOAD_DIR.resolve()
         if not base.exists():
@@ -297,6 +302,9 @@ def build_app() -> FastAPI:
                 continue
             files.append(path.relative_to(base).as_posix())
         files.sort()
+        
+        _list_cache = files
+        _list_cache_time = time.time()
         return files
 
     @app.delete('/delete')
