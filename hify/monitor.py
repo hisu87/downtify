@@ -69,6 +69,8 @@ class PlaylistMonitorDB:
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._path, check_same_thread=False)
         conn.execute('PRAGMA foreign_keys = ON')
+        conn.execute('PRAGMA journal_mode = WAL')
+        conn.execute('PRAGMA synchronous = NORMAL')
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -95,6 +97,8 @@ class PlaylistMonitorDB:
                         ON DELETE CASCADE,
                     UNIQUE(playlist_id, track_spotify_id)
                 );
+                CREATE INDEX IF NOT EXISTS idx_downloaded_track_spotify_id 
+                    ON downloaded_tracks(track_spotify_id);
             """)
             # Migration: add filename column if it doesn't exist yet
             try:
@@ -367,6 +371,30 @@ async def check_playlist(  # noqa: PLR0913
             )
             batch_records.append((track_id, _now_iso(), filename))
             downloaded += 1
+            
+            # Step 3: Background Task (Tải lyrics ngầm)
+            async def _bg_fetch_lyrics(s_dict: dict[str, Any]):
+                import hify.lyrics as lyrics
+                eff = settings.get('lyrics_providers', 'lrclib') if settings else 'lrclib'
+                provs = []
+                for p in [x.strip() for x in eff.split(',') if x.strip()]:
+                    if p == 'amll': provs.append(lyrics.AmllTtmlProvider())
+                    elif p == 'netease': provs.append(lyrics.NetEaseYrcProvider())
+                    elif p == 'lrclib': provs.append(lyrics.LrcLibProvider())
+                    elif p == 'musixmatch': provs.append(lyrics.MusixmatchTokenProvider())
+                if not provs: provs.append(lyrics.LrcLibProvider())
+                
+                res = lyrics.LyricsResolver(providers=provs)
+                try:
+                    # Tự động cache vào lyrics_db bên trong hàm resolve
+                    await res.resolve(s_dict)
+                    logger.debug('Successfully cached background lyrics for {}', s_dict.get('song_id'))
+                except Exception as e:
+                    logger.warning('Failed background lyrics fetch for {}: {}', s_dict.get('song_id'), e)
+
+            # Khởi chạy ngầm không chặn luồng chính
+            asyncio.create_task(_bg_fetch_lyrics(song))
+            
         except Exception:
             logger.exception('Failed to auto-download track {}', track_id)
 

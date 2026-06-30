@@ -1,6 +1,6 @@
 {
   "name": "hify",
-  "version": "3.2.0",
+  "version": "3.2.1-stable",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,7 +14,8 @@
     "fast-average-color": "^9.5.2",
     "uuid": "^9.0.0",
     "vue": "^3.3.4",
-    "vue-router": "^4.2.4"
+    "vue-router": "^4.2.4",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
   },
   "devDependencies": {
     "@iconify/vue": "^4.1.1",

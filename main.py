@@ -278,7 +278,10 @@ def build_app() -> FastAPI:
             )
         )
 
+    from cachetools import cached, TTLCache
+    
     @app.get('/list')
+    @cached(cache=TTLCache(maxsize=1, ttl=30))
     def list_downloads() -> list[str]:
         audio_exts = {'.mp3', '.m4a', '.flac', '.ogg', '.wav', '.aac', '.opus'}
         base = DOWNLOAD_DIR.resolve()
@@ -350,11 +353,80 @@ def build_app() -> FastAPI:
             },
         )
 
-    app.mount(
-        '/downloads',
-        StaticFiles(directory=str(DOWNLOAD_DIR)),
-        name='downloads',
-    )
+    import mimetypes
+    from fastapi import Request
+    from fastapi.responses import StreamingResponse
+
+    @app.get('/downloads/{file_path:path}')
+    async def download_file(file_path: str, request: Request):
+        if not _is_safe_path(file_path):
+            return JSONResponse(status_code=400, content={'error': 'Invalid path'})
+        
+        base = DOWNLOAD_DIR.resolve()
+        try:
+            full = (base / file_path).resolve()
+            full.relative_to(base)
+        except (ValueError, RuntimeError):
+            return JSONResponse(status_code=400, content={'error': 'Invalid path'})
+            
+        if not full.is_file():
+            return JSONResponse(status_code=404, content={'error': 'File not found'})
+            
+        file_size = full.stat().st_size
+        range_header = request.headers.get('Range')
+        
+        if not range_header:
+            # Chunk size 1MB (1024 * 1024)
+            def file_iterator():
+                with open(full, 'rb') as f:
+                    while chunk := f.read(1024 * 1024):
+                        yield chunk
+            media_type, _ = mimetypes.guess_type(str(full))
+            return StreamingResponse(
+                file_iterator(),
+                media_type=media_type or 'application/octet-stream',
+                headers={'Accept-Ranges': 'bytes', 'Content-Length': str(file_size)}
+            )
+            
+        try:
+            byte_range = range_header.replace('bytes=', '').split('-')
+            start = int(byte_range[0])
+            end = int(byte_range[1]) if byte_range[1] else file_size - 1
+        except ValueError:
+            return JSONResponse(status_code=416, content={'error': 'Invalid Range'})
+            
+        if start >= file_size or end >= file_size or start > end:
+            return JSONResponse(
+                status_code=416,
+                headers={'Content-Range': f'bytes */{file_size}'}
+            )
+            
+        chunk_size = end - start + 1
+        
+        def ranged_file_iterator(start, chunk_size):
+            with open(full, 'rb') as f:
+                f.seek(start)
+                remaining = chunk_size
+                # Read in max 1MB chunks
+                while remaining > 0:
+                    read_size = min(1024 * 1024, remaining)
+                    data = f.read(read_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+                    
+        media_type, _ = mimetypes.guess_type(str(full))
+        return StreamingResponse(
+            ranged_file_iterator(start, chunk_size),
+            status_code=206,
+            media_type=media_type or 'application/octet-stream',
+            headers={
+                'Accept-Ranges': 'bytes',
+                'Content-Range': f'bytes {start}-{end}/{file_size}',
+                'Content-Length': str(chunk_size)
+            }
+        )
     app.mount(
         '/',
         SPAStaticFiles(directory=WEB_GUI_LOCATION, html=True),

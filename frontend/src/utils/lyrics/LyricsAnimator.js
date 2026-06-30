@@ -162,8 +162,10 @@ export class LyricsAnimator {
 
     const activeLineFrac = this._findActiveLineFrac(now, cursor)
 
-    // Determine device capabilities (Giai đoạn 4.3)
-    const isMobile = window.devicePixelRatio && window.devicePixelRatio < 2
+    const isMobile =
+      typeof navigator !== 'undefined' &&
+      (navigator.userAgentData?.mobile ??
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
 
     for (let li = 0; li < lines.length; li++) {
       const line = lines[li]

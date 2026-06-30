@@ -21,8 +21,8 @@ current_version() {
 }
 
 validate_semver() {
-  if ! echo "$1" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-    echo "Error: '$1' is not a valid semver version (expected X.Y.Z)." >&2
+  if ! echo "$1" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$'; then
+    echo "Error: '$1' is not a valid semver version (expected X.Y.Z[-suffix])." >&2
     exit 1
   fi
 }
