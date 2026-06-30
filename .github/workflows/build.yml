@@ -19,9 +19,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract version from git tags
+      - name: Extract version from pyproject.toml
         id: version
-        run: echo "VERSION=$(git describe --tags --always | cut -d'-' -f1)" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Generate timestamp
         id: time
