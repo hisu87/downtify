@@ -141,6 +141,11 @@ def get_version() -> str:
     return state.version
 
 
+@router.get('/api/health')
+def get_health() -> dict[str, str]:
+    return {'status': 'ok'}
+
+
 @router.get('/api/v1/tracks/{id}/lyrics')
 async def get_lyrics_endpoint(id: str):
     if id in _INFLIGHT_RESOLVES:
